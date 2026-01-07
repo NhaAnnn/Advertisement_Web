@@ -1,11 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
-// app/services/page.tsx
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Search, ChevronDown, Headphones, PlusCircle, MoreHorizontal, X, ArrowRight
+  Search, ChevronDown, Headphones, PlusCircle, MoreHorizontal, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -64,42 +63,43 @@ export default function ServicesPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-noir text-sand flex flex-col">
+    <main className="relative min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
 
       {/* Background FX */}
       <div className="fixed inset-0 pointer-events-none z-0">
-         <div className="absolute inset-0 bg-noise opacity-30 mix-blend-overlay"></div>
-         <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"></div>
+         <div className="absolute inset-0 bg-noise opacity-[0.03] mix-blend-overlay"></div>
+         <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]"></div>
       </div>
 
       {/* --- HERO SECTION --- */}
-      {/* Thêm pt-32 để tránh bị Header che mất */}
-      <section className="relative h-[40vh] min-h-[400px] flex items-center justify-center overflow-hidden border-b border-white/5 pt-20">
+      <section className="relative h-[40vh] min-h-[400px] flex items-center justify-center overflow-hidden border-b border-border pt-20">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1634128221889-82ed6efebfc3?q=80&w=1974')] bg-cover bg-center"></div>
-        <div className="absolute inset-0 bg-noir/90 backdrop-blur-[2px]"></div>
+        {/* Lớp phủ sáng màu cho theme trắng */}
+        <div className="absolute inset-0 bg-background/90 backdrop-blur-[2px]"></div>
 
         <div className="max-w-[1800px] mx-auto px-6 md:px-12 w-full relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-            className="inline-block py-1 px-4 border border-primary/30 bg-primary/10 backdrop-blur-md rounded-full text-primary text-[10px] font-bold uppercase tracking-[0.3em] mb-6 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+            className="inline-block py-1 px-4 border border-primary/30 bg-primary/10 backdrop-blur-md rounded-full text-primary text-[10px] font-bold uppercase tracking-[0.3em] mb-6 shadow-sm"
           >
             Catalog {CATALOG_INFO.year}
           </motion.div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-sand mb-6 tracking-tight">
-            {CATALOG_INFO.title} <span className="italic text-transparent bg-clip-text bg-gold-gradient">{CATALOG_INFO.highlight}</span>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-foreground mb-6 tracking-tight">
+            {CATALOG_INFO.title} <span className="italic text-transparent bg-clip-text bg-brand-gradient">{CATALOG_INFO.highlight}</span>
           </h1>
-          <p className="text-sand-dim text-base md:text-lg max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-muted text-base md:text-lg max-w-2xl mx-auto font-light leading-relaxed">
             {CATALOG_INFO.desc}
           </p>
         </div>
       </section>
 
-      {/* --- MARQUEE (Đặt ở đây để nó nằm dưới Hero, không chèn lên trên) --- */}
-      <div className="bg-primary py-3 overflow-hidden flex whitespace-nowrap border-y border-white/10 relative shadow-lg z-20">
-        <div className="animate-marquee flex gap-16 text-black font-bold text-xs uppercase tracking-[0.2em] items-center">
+      {/* --- MARQUEE --- */}
+      <div className="bg-primary py-3 overflow-hidden flex whitespace-nowrap border-y border-primary-dark/10 relative shadow-lg z-20">
+        {/* Text màu trắng trên nền Primary để tương phản tốt nhất */}
+        <div className="animate-marquee flex gap-16 text-white font-bold text-xs uppercase tracking-[0.2em] items-center">
           {[...MARQUEE_TEXT, ...MARQUEE_TEXT, ...MARQUEE_TEXT].map((text, i) => (
             <span key={i} className="flex items-center gap-16">
-              {text} <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
+              {text} <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
             </span>
           ))}
         </div>
@@ -111,19 +111,19 @@ export default function ServicesPage() {
 
             {/* SIDEBAR */}
             <aside className="lg:col-span-3 lg:sticky lg:top-32 space-y-8">
-              {/* Menu */}
-              <div className="bg-noir-light/80 backdrop-blur-md rounded-sm border border-white/10 overflow-hidden shadow-2xl">
-                <div className="p-4 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
-                  <h3 className="font-serif text-lg text-sand">Phân Loại</h3>
-                  <MoreHorizontal className="text-sand-dim w-4 h-4" />
+              {/* Category Menu */}
+              <div className="bg-surface backdrop-blur-md rounded-sm border border-border overflow-hidden shadow-sm">
+                <div className="p-4 bg-white border-b border-border flex items-center justify-between">
+                  <h3 className="font-serif text-lg text-foreground">Phân Loại</h3>
+                  <MoreHorizontal className="text-muted w-4 h-4" />
                 </div>
                 <div className="flex flex-col">
                   {CATEGORIES.map((cat) => (
-                    <div key={cat.id} className="border-b border-white/5 last:border-0">
+                    <div key={cat.id} className="border-b border-border last:border-0">
                       <button
                         onClick={() => handleCategoryClick(cat.id)}
-                        className={`w-full flex items-center justify-between p-4 transition-all border-l-2 hover:bg-white/[0.02]
-                          ${activeCategory === cat.id && !searchQuery ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-sand-dim hover:text-sand'}
+                        className={`w-full flex items-center justify-between p-4 transition-all border-l-2 hover:bg-white
+                          ${activeCategory === cat.id && !searchQuery ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-muted hover:text-foreground'}
                         `}
                       >
                         <span className="font-bold text-xs uppercase tracking-[0.15em] text-left">{cat.name}</span>
@@ -136,7 +136,7 @@ export default function ServicesPage() {
                              initial={{ height: 0, opacity: 0 }}
                              animate={{ height: "auto", opacity: 1 }}
                              exit={{ height: 0, opacity: 0 }}
-                             className="overflow-hidden bg-black/40"
+                             className="overflow-hidden bg-background"
                            >
                               <div className="py-2">
                                 {cat.items.map((item, idx) => (
@@ -144,7 +144,7 @@ export default function ServicesPage() {
                                     key={idx}
                                     onClick={() => handleSubItemClick(item)}
                                     className={`w-full text-left px-8 py-2.5 text-sm transition-colors flex items-center justify-between group
-                                      ${activeSubItem === item ? 'text-white font-bold bg-white/5' : 'text-sand-dim hover:text-white hover:bg-white/5'}
+                                      ${activeSubItem === item ? 'text-primary font-bold bg-primary/5' : 'text-muted hover:text-foreground hover:bg-surface'}
                                     `}
                                   >
                                     {item}
@@ -160,12 +160,15 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              {/* Support Banner */}
-              <div className="p-8 rounded-sm bg-gradient-to-br from-[#1c1917] to-black border border-white/10 text-center relative overflow-hidden group hover:border-primary/50 transition-colors duration-500 hidden lg:block">
-                <Headphones className="w-10 h-10 text-primary mx-auto mb-4 block" />
-                <h4 className="font-serif text-xl text-sand mb-2">Cần Tư Vấn?</h4>
-                <p className="text-xs text-sand-dim mb-6 leading-relaxed">Đội ngũ ArtPrint sẵn sàng hỗ trợ bạn.</p>
-                <button className="w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all shadow-lg">
+              {/* Support Banner (Dark Mode Block để nổi bật) */}
+              <div className="p-8 rounded-sm bg-surface-dark border border-border text-center relative overflow-hidden group hover:border-primary/50 transition-colors duration-500 hidden lg:block shadow-2xl">
+                {/* Glow effect */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[40px]"></div>
+
+                <Headphones className="w-10 h-10 text-primary mx-auto mb-4 block relative z-10" />
+                <h4 className="font-serif text-xl text-white mb-2 relative z-10">Cần Tư Vấn?</h4>
+                <p className="text-xs text-white/60 mb-6 leading-relaxed relative z-10">Đội ngũ ArtPrint sẵn sàng hỗ trợ bạn chọn giấy và kỹ thuật.</p>
+                <button className="w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all shadow-lg relative z-10">
                   Chat Zalo Ngay
                 </button>
               </div>
@@ -174,20 +177,21 @@ export default function ServicesPage() {
             {/* PRODUCT GRID */}
             <div className="lg:col-span-9">
               {/* Toolbar */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-white/5 pb-8">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-border pb-8">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-serif text-sand hidden md:block">
+                  <h2 className="text-2xl font-serif text-foreground hidden md:block">
                     {searchQuery ? 'Kết quả tìm kiếm' : 'Danh mục'}
                   </h2>
-                  <div className="h-8 w-[1px] bg-white/10 hidden md:block"></div>
-                  <p className="text-sm text-sand-dim">
+                  <div className="h-8 w-[1px] bg-border hidden md:block"></div>
+                  <p className="text-sm text-muted">
                     <span className="text-primary font-bold mr-1">{filteredProducts.length}</span>
                     sản phẩm
                   </p>
                 </div>
 
+                {/* Search Box */}
                 <div className="relative w-full md:w-80 group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sand-dim w-4 h-4 group-focus-within:text-primary transition-colors" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted w-4 h-4 group-focus-within:text-primary transition-colors" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -195,18 +199,18 @@ export default function ServicesPage() {
                       setSearchQuery(e.target.value);
                       if(e.target.value) setActiveSubItem(null);
                     }}
-                    className="w-full bg-noir-light border border-white/10 rounded-sm py-2.5 pl-12 pr-10 text-sand text-sm focus:border-primary/50 focus:outline-none transition-all placeholder:text-sand-dim/40 focus:bg-noir"
+                    className="w-full bg-surface border border-border rounded-sm py-2.5 pl-12 pr-10 text-foreground text-sm focus:border-primary focus:outline-none transition-all placeholder:text-muted/50 focus:bg-background shadow-sm"
                     placeholder="Tìm kiếm sản phẩm..."
                   />
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sand-dim hover:text-white">
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-primary">
                       <X className="w-4 h-4" />
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Products */}
+              {/* Products List */}
               <div className="min-h-[400px]">
                 {filteredProducts.length > 0 ? (
                   <motion.div
@@ -217,19 +221,20 @@ export default function ServicesPage() {
                       <Link
                         href={`/product/${product.slug}`}
                         key={product.slug || idx}
-                        className="group relative bg-noir-light border border-white/5 hover:border-primary/50 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col hover:-translate-y-1 h-full"
+                        className="group relative bg-background border border-border hover:border-primary/50 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 flex flex-col hover:-translate-y-1 h-full"
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden bg-black">
+                        <div className="relative aspect-[4/3] overflow-hidden bg-surface-dark">
                           <img
                             src={product.image}
                             alt={product.name}
-                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110 opacity-95 group-hover:opacity-100"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-noir via-transparent to-transparent opacity-60"></div>
+                          {/* Gradient đen nhẹ ở dưới để làm nổi chữ nếu có */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
 
                           {product.tag && (
                             <div className="absolute top-3 left-3">
-                              <span className="px-3 py-1 bg-primary text-white text-[9px] font-bold uppercase tracking-widest rounded-sm shadow-lg">
+                              <span className="px-3 py-1 bg-primary text-white text-[9px] font-bold uppercase tracking-widest rounded-sm shadow-md">
                                 {product.tag}
                               </span>
                             </div>
@@ -237,23 +242,24 @@ export default function ServicesPage() {
                         </div>
 
                         <div className="p-6 flex flex-col flex-1 relative">
-                          <div className="absolute top-0 left-0 w-0 h-[1px] bg-primary group-hover:w-full transition-all duration-500"></div>
+                          {/* Decorative Line */}
+                          <div className="absolute top-0 left-0 w-0 h-[2px] bg-primary group-hover:w-full transition-all duration-500"></div>
 
-                          <h4 className="font-serif text-xl text-sand mb-2 group-hover:text-primary transition-colors">
+                          <h4 className="font-serif text-xl text-foreground mb-2 group-hover:text-primary transition-colors">
                             {product.name}
                           </h4>
-                          <p className="text-xs text-sand-dim/80 font-light leading-relaxed mb-6 line-clamp-2">
+                          <p className="text-xs text-muted font-light leading-relaxed mb-6 line-clamp-2">
                             {product.desc}
                           </p>
 
-                          <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors">
+                          <div className="mt-auto flex items-center justify-between pt-4 border-t border-border group-hover:border-primary/10 transition-colors">
                             <div className="flex flex-col">
-                              <span className="text-[10px] text-sand-dim uppercase tracking-wider">Giá từ</span>
-                              <span className="text-base font-bold text-sand group-hover:text-primary-glow transition-colors">
-                                {product.price} <span className="text-[10px] font-normal text-sand-dim">{product.unit}</span>
+                              <span className="text-[10px] text-muted uppercase tracking-wider">Giá từ</span>
+                              <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                                {product.price} <span className="text-[10px] font-normal text-muted">{product.unit}</span>
                               </span>
                             </div>
-                            <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sand-dim group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+                            <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all shadow-sm">
                                <PlusCircle className="w-5 h-5" />
                             </div>
                           </div>
@@ -262,9 +268,9 @@ export default function ServicesPage() {
                     ))}
                   </motion.div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-60 bg-noir-light/50 border border-white/5 rounded-sm border-dashed">
-                    <Search className="w-10 h-10 text-sand-dim/30 mb-3" />
-                    <p className="text-sand-dim">Không tìm thấy sản phẩm phù hợp.</p>
+                  <div className="flex flex-col items-center justify-center h-60 bg-surface border border-border rounded-sm border-dashed">
+                    <Search className="w-10 h-10 text-muted/30 mb-3" />
+                    <p className="text-muted">Không tìm thấy sản phẩm phù hợp.</p>
                     <button
                       onClick={() => { setSearchQuery(''); setActiveSubItem(null); }}
                       className="mt-4 text-primary text-xs font-bold uppercase hover:underline"

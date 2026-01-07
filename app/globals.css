@@ -1,37 +1,44 @@
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
-  body {
-    /* Ép buộc nền màu Noir (#09090b) và chữ màu Sand (#fafafa) */
-    background-color: #282829;
-    color: #fafafa;
+  /* Xóa 'scroll-smooth' ở đây đi để tránh xung đột với đoạn fix ở cuối */
+  html, body {
+    @apply bg-background text-foreground antialiased;
   }
 }
 
-/* Tùy chỉnh thanh cuộn */
+/* --- TÙY CHỈNH THANH CUỘN (SCROLLBAR) - PHIÊN BẢN LIGHT THEME --- */
+/* Dành cho Chrome, Edge, Safari */
 ::-webkit-scrollbar {
   width: 8px;
-}
-::-webkit-scrollbar-track {
-  background-color: #38384d;
-}
-::-webkit-scrollbar-thumb {
-  background-color: #18181b;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-::-webkit-scrollbar-thumb:hover {
-  background-color: #f59e0b;
+  height: 8px; /* Cho thanh cuộn ngang nếu có */
 }
 
-/* THÊM ĐOẠN NÀY VÀO CUỐI CÙNG */
+/* Rãnh cuộn (Track): Màu nền sáng (trùng màu surface) */
+::-webkit-scrollbar-track {
+  background-color: #f1f5f9; /* Slate-100 */
+}
+
+/* Tay nắm cuộn (Thumb): Màu xám trung tính */
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* Slate-300 */
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9; /* Tạo khoảng hở viền cho đẹp */
+}
+
+/* Khi di chuột vào: Đổi sang màu Xanh chủ đạo */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #2563eb; /* Primary Blue */
+}
+
+/* --- QUAN TRỌNG: MỞ KHÓA CUỘN (THE NUCLEAR FIX) --- */
+/* Đoạn này bắt buộc phải nằm cuối cùng */
 html, body {
-  height: auto !important; /* Đảm bảo chiều cao tự động giãn nở */
-  overflow-y: visible !important; /* Trả lại thanh cuộn cho trình duyệt quản lý */
-  scroll-behavior: auto !important; /* Tắt cuộn mượt mặc định để JS xử lý tức thì */
+  height: auto !important;       /* Để chiều cao tự giãn theo nội dung */
+  min-height: 100%;              /* Đảm bảo phủ kín màn hình */
+  overflow-y: auto !important;   /* Bắt buộc hiển thị thanh cuộn dọc */
+  overflow-x: hidden !important; /* Ẩn thanh cuộn ngang để tránh vỡ layout */
+  scroll-behavior: auto !important; /* Tắt cuộn mượt để JS xử lý tức thì (fix lỗi kẹt) */
 }
