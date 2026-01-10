@@ -10,12 +10,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // 1. NHÓM NỀN (BACKGROUNDS)
+        //NHÓM NỀN
         background: "#ffffff", // Trắng tinh (Nền trang)
         surface: "#f8fafc", // Xám xanh rất nhạt (Nền khối/Section)
         "surface-dark": "#0f172a", // Màu tối (Dùng cho các khối đảo ngược màu)
 
-        // 2. NHÓM CHỮ (TEXT)
+        //NHÓM CHỮ
         foreground: "#05205f", // Xanh đen đậm (Chữ chính)
         muted: "#64748b", // Xám (Chữ phụ/Mô tả)
         on: {
@@ -23,7 +23,7 @@ module.exports = {
           dark: "#f8fafc", // Chữ trên nền tối
         },
 
-        // 3. MÀU CHỦ ĐẠO (BRAND)
+        //MÀU CHỦ ĐẠO
         primary: {
           DEFAULT: "#2563eb", // Blue-600 (Royal Blue)
           dark: "#1d4ed8", // Blue-700 (Hover state)
@@ -31,13 +31,13 @@ module.exports = {
           10: "#eff6ff", // Blue-50 (Background tint)
         },
 
-        // 4. MÀU ĐIỂM NHẤN (ACCENT - Thay cho Orange cũ)
+        //MÀU ĐIỂM NHẤN
         accent: {
           DEFAULT: "#f59e0b", // Amber-500 (Vàng Gold)
           glow: "#fbbf24", // Amber-400
         },
 
-        // 5. ĐƯỜNG VIỀN (BORDER)
+        //ĐƯỜNG VIỀN
         border: "#e2e8f0", // Slate-200
       },
       fontFamily: {

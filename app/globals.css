@@ -42,3 +42,12 @@ html, body {
   overflow-x: hidden !important; /* Ẩn thanh cuộn ngang để tránh vỡ layout */
   scroll-behavior: auto !important; /* Tắt cuộn mượt để JS xử lý tức thì (fix lỗi kẹt) */
 }
+
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}

@@ -77,7 +77,7 @@ export default function ContactPage() {
                          </div>
                          <div>
                             <span className="text-xs font-bold uppercase tracking-widest text-white/50 block mb-1">Hotline tư vấn</span>
-                            <p className="text-white text-lg font-serif font-bold">{CONTACT_INFO.hotline}</p>
+                            <p className="text-white text-lg  font-bold">{CONTACT_INFO.hotline}</p>
                          </div>
                       </div>
                       <div className="flex items-start gap-4">

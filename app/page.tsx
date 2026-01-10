@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowDown, ArrowUpRight, BookOpen, Megaphone, ChevronLeft, ChevronRight, Quote, LayoutGrid } from 'lucide-react';
 
@@ -14,6 +14,53 @@ import {
 } from './data/home_content';
 
 export default function HomePage() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // 1. NHÂN ĐÔI DANH SÁCH ĐỂ TẠO HIỆU ỨNG VÒNG LẶP VÔ TẬN
+  const LOOP_ITEMS = [...SHOWCASE_ITEMS, ...SHOWCASE_ITEMS];
+
+  // 2. LOGIC CUỘN LIÊN TỤC (Request Animation Frame)
+  useEffect(() => {
+    let animationFrameId: number;
+
+    const autoScroll = () => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+
+        // Nếu không Pause thì mới cuộn
+        if (!isPaused) {
+          // Tốc độ cuộn: 1px mỗi khung hình (Tăng số này nếu muốn nhanh hơn)
+          container.scrollLeft += 1;
+        }
+
+        // 3. LOGIC RESET TÀNG HÌNH
+        // Nếu đã cuộn qua một nửa độ dài (tức là hết danh sách gốc) -> Reset về 0 ngay lập tức
+        // scrollWidth / 2 chính là độ dài của danh sách gốc (vì ta đã nhân đôi)
+        if (container.scrollLeft >= container.scrollWidth / 2) {
+          container.scrollLeft = 0;
+        }
+      }
+      animationFrameId = requestAnimationFrame(autoScroll);
+    };
+
+    // Bắt đầu vòng lặp
+    animationFrameId = requestAnimationFrame(autoScroll);
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isPaused]);
+
+  // Hàm xử lý nút bấm thủ công (Vẫn giữ lại để người dùng tự tua nhanh)
+  const handleManualScroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 450;
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <main className="relative overflow-x-hidden min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
 
@@ -176,7 +223,7 @@ export default function HomePage() {
       </section>
 
       {/* =========================================
-          SECTION 3: SHOWCASE
+          SECTION 3: SHOWCASE (CONTINUOUS LOOP)
           Background: Surface Dark (Màu tối sang trọng)
       ========================================= */}
       <section id="showcase" className="py-24 bg-surface-dark relative overflow-hidden text-white">
@@ -184,7 +231,7 @@ export default function HomePage() {
 
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
             <div>
-              <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm mb-2 block flex items-center gap-2">
+              <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm mb-2  flex items-center gap-2">
                  <span className="w-8 h-[2px] bg-primary block"></span> Tiêu điểm tháng
               </span>
               <h2 className="text-4xl md:text-6xl font-serif text-white">
@@ -192,23 +239,37 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <div className="flex gap-4 hidden md:flex">
-               <button className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary hover:border-primary transition-colors text-white">
+            {/* Navigation Buttons */}
+            {/* <div className="gap-4 hidden md:flex">
+               <button
+                 onClick={() => handleManualScroll('left')}
+                 className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary hover:border-primary transition-colors text-white active:scale-95 "
+               >
                  <ChevronLeft className="w-6 h-6"/>
                </button>
-               <button className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary hover:border-primary transition-colors text-white">
+               <button
+                 onClick={() => handleManualScroll('right')}
+                 className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center hover:bg-primary hover:border-primary transition-colors text-white active:scale-95 "
+               >
                  <ChevronRight className="w-6 h-6"/>
                </button>
-            </div>
+            </div> */}
           </div>
 
           <div className="relative w-full">
-            <div className="flex overflow-x-auto snap-x snap-mandatory gap-8 pb-12 -mx-6 px-6 md:px-0 md:mx-0 scrollbar-hide select-none">
-               {SHOWCASE_ITEMS.map((item, idx) => (
-                  <Link href={item.link} key={idx} className="snap-center shrink-0 w-[85vw] sm:w-[400px] lg:w-[450px] h-[600px] relative group rounded-sm overflow-hidden border border-white/10 hover:border-primary/50 transition-all duration-500 shadow-2xl">
+            {/* 4. REMOVE SNAP CLASSES: Bỏ snap-x và snap-mandatory để cuộn mượt mà */}
+            <div
+              ref={scrollContainerRef}
+              // Khi hover thì Pause autoplay
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+              className="flex overflow-x-auto gap-8 pb-12 -mx-6 px-6 md:px-0 md:mx-0 scrollbar-hide select-none"
+            >
+               {/* 5. RENDER LOOP_ITEMS (Danh sách nhân đôi) */}
+               {LOOP_ITEMS.map((item, idx) => (
+                  <Link href={item.link} key={idx} className="shrink-0 w-[85vw] sm:w-[400px] lg:w-[450px] h-[600px] relative group rounded-sm overflow-hidden border border-white/10 hover:border-primary/50 transition-all duration-500 shadow-2xl">
                      <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] group-hover:scale-110" style={{backgroundImage: `url('${item.image}')`}}></div>
 
-                     {/* FIX: Gradient đen */}
                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90"></div>
 
                      <div className="absolute top-6 left-6 z-20">
@@ -334,7 +395,7 @@ export default function HomePage() {
                      {/* Standard Card */}
                      {item.type === 'card' && (
                         <div className="relative overflow-hidden aspect-[4/5]">
-                           <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] group-hover:scale-110 grayscale group-hover:grayscale-0 transition-all" style={{backgroundImage: `url('${item.image}')`}}></div>
+                           <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] group-hover:scale-110 grayscale group-hover:grayscale-0" style={{backgroundImage: `url('${item.image}')`}}></div>
                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90"></div>
                            <div className="absolute bottom-0 left-0 p-8 w-full">
                               <div className="border-t border-white/20 pt-6 flex justify-between items-end">
