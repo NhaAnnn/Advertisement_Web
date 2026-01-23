@@ -97,7 +97,7 @@ export default function HomePage() {
 
             <h1
               className="font-serif text-foreground mb-6 drop-shadow-sm
-               text-4xl sm:text-5xl md:text-6xl lg:text-[6.5rem] xl:text-[8rem]
+               text-5xl sm:text-5xl md:text-6xl lg:text-[6.5rem] xl:text-[8rem]
                leading-[1.1] lg:leading-[0.9] tracking-tight"
             >
               {/* Line 1: Standard */}
