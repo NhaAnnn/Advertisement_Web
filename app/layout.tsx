@@ -48,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className="dark ">
+    <html lang="vi" style={{ colorScheme: 'light' }} className="light">
       {/* THÊM bg-noir VÀ text-sand VÀO ĐÂY */}
       <body
         className={`${playfair.variable} ${manrope.variable} ${cinzel.variable} font-sans bg-noir text-sand selection:bg-primary/30 selection:text-white antialiased`}

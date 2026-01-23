@@ -85,7 +85,7 @@ export default function HomePage() {
           {/* Left Content */}
           <div className="lg:col-span-7 relative z-20">
             <div className="absolute -left-6 -top-24 text-[12rem] md:text-[18rem] font-serif opacity-[0.04] select-none pointer-events-none font-bold text-foreground">
-              01
+              HTA
             </div>
 
             <div className="mb-6 flex items-center gap-4">
@@ -95,12 +95,32 @@ export default function HomePage() {
               </span>
             </div>
 
-            <h1 className="font-serif text-3xl md:text-5xl lg:text-[6.5rem] xl:text-[8rem] leading-[0.9] tracking-tight text-foreground mb-10 drop-shadow-sm">
+            <h1
+              className="font-serif text-foreground mb-6 drop-shadow-sm
+               text-4xl sm:text-5xl md:text-6xl lg:text-[6.5rem] xl:text-[8rem]
+               leading-[1.1] lg:leading-[0.9] tracking-tight"
+            >
+              {/* Line 1: Standard */}
               <span className="block font-medium">{HERO_DATA.title.line1}</span>
-              <span className="block italic font-light leading-[1.1] text-primary ml-4 md:ml-16 mt-5">
+
+              {/* Line 2: Italic + Indent */}
+              {/* Changed: Removed margin on mobile (ml-0), added back on sm (ml-4) */}
+              <span
+                className="block italic font-light text-primary
+                   mt-2 sm:mt-5
+                   ml-0 sm:ml-8 md:ml-16
+                   leading-tight lg:leading-[1.1]"
+              >
                 {HERO_DATA.title.line2}
               </span>
-              <span className="block font-bold text-transparent bg-clip-text leading-[1.1] bg-brand-gradient relative z-10 pb-2">
+
+              {/* Line 3: Gradient */}
+              {/* Changed: Added break-words to prevent gradient text from forcing scroll */}
+              <span
+                className="block font-bold text-transparent bg-clip-text
+                   bg-brand-gradient relative z-10 pb-2
+                   leading-tight lg:leading-[1.1]"
+              >
                 {HERO_DATA.title.line3}
               </span>
             </h1>

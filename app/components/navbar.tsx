@@ -4,11 +4,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, Phone } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, ArrowRight, Phone, ArrowUpRight } from "lucide-react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Montserrat } from "next/font/google";
 
-// Menu gốc của bạn (chỉ 3 mục)
 const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
   { label: "Dịch vụ", href: "/services" },
@@ -17,16 +16,56 @@ const NAV_LINKS = [
 
 const montserrat = Montserrat({
   subsets: ["latin"],
-  weight: ["900"], // Độ đậm nhất để tạo khối vững chắc
+  weight: ["900"],
   display: "swap",
 });
+
+// --- VARIANT ANIMATION (Cấu hình chuyển động) ---
+const menuVars: Variants = {
+  initial: { scaleY: 0 },
+  animate: {
+    scaleY: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.12, 0, 0.39, 0],
+    },
+  },
+  exit: {
+    scaleY: 0,
+    transition: {
+      delay: 0.2,
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+// Thêm ": Variants"
+const containerVars: Variants = {
+  initial: { transition: { staggerChildren: 0.09, staggerDirection: -1 } },
+  open: {
+    transition: {
+      delayChildren: 0.2,
+      staggerChildren: 0.09,
+      staggerDirection: 1,
+    },
+  },
+};
+
+// Thêm ": Variants"
+const mobileLinkVars: Variants = {
+  initial: {
+    y: "30vh",
+    transition: { duration: 0.5, ease: [0.37, 0, 0.63, 1] },
+  },
+  open: { y: 0, transition: { duration: 0.7, ease: [0, 0.55, 0.45, 1] } },
+};
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hiệu ứng khi cuộn trang
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -40,55 +79,35 @@ export default function Navbar() {
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-500 border-b
         ${
-          isScrolled
-            ? "bg-white/95 backdrop-blur-xl py-3 border-black/5 shadow-sm"
-            : "bg-transparent py-5 border-transparent"
+          isScrolled || isMobileMenuOpen
+            ? "bg-white/95 backdrop-blur-xl border-black/5 shadow-sm"
+            : "bg-transparent border-transparent"
         }`}
       >
-        <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex items-center justify-between">
-          {/* ================= LOGO MỚI (Ảnh + Chữ HOÀNG THẢO ANH) ================= */}
-          <Link
-            href="/"
-            // Giảm khoảng cách gap để kết nối ảnh và chữ tốt hơn
-            className="group flex items-center relative z-50"
-          >
-            {/* 1. Phần Ảnh Logo: Thu nhỏ lại kích thước chuẩn */}
-            {/* Mobile: 40px (w-10), Desktop: 56px (w-14) -> Vừa vặn, không bị thô */}
-            <div
-              className={`relative w-10 h-10 md:w-14 md:h-14  rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300
-
-        `}
-            >
+        <div className="max-w-[1800px] mx-auto px-6 md:px-12 py-3 flex items-center justify-between relative z-50 bg-inherit">
+          {/* LOGO */}
+          <Link href="/" className="group flex items-center gap-3">
+            <div className="relative w-10 h-10 md:w-14 md:h-14 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300">
               <img
                 src="/logo-blue.png"
-                alt="Logo Hoàng Thảo Anh"
-                className="w-full h-full object-contain p-1" // p-1 tạo khoảng thở nhẹ
+                alt="Logo"
+                className="w-full h-full object-contain p-1"
               />
             </div>
-
-            {/* 2. Phần Chữ Thương Hiệu: Giảm size chữ tương ứng */}
             <div className="flex flex-col justify-center">
-              {/* TÊN THƯƠNG HIỆU:
-                  - Áp dụng font montserrat.className
-                  - Bỏ scale-y để chữ không bị méo
-                  - Chữ sẽ tự động đậm và đẹp tự nhiên
-              */}
               <h1
                 className={`${montserrat.className} text-base md:text-md text-[#16579e] uppercase whitespace-nowrap tracking-tighter leading-none`}
               >
                 HOÀNG THẢO ANH
               </h1>
-              {/* Slogan: Nhỏ lại để tinh tế hơn */}
-              <div className="w-full flex justify-between items-center text-[#16579e] font-bold ">
-                <span className="text-[0.5rem]  md:text-[0.58rem] uppercase  leading-none tracking-widest mt-1">
-                  Khác biệt tạo thành công
-                </span>
-              </div>
+              <span className="text-[0.5rem] md:text-[0.58rem] text-[#16579e] font-bold uppercase leading-none tracking-widest mt-1">
+                Khác biệt tạo thành công
+              </span>
             </div>
           </Link>
 
-          {/* ================= DESKTOP MENU ================= */}
-          <nav className="hidden lg:flex items-center gap-1 bg-white/80 px-2 py-1.5 rounded-full border border-black/5 backdrop-blur-md shadow-sm transition-all duration-300 hover:shadow-md hover:bg-white">
+          {/* DESKTOP MENU */}
+          <nav className="hidden lg:flex items-center gap-1 bg-white/80 px-2 py-1.5 rounded-full border border-black/5 backdrop-blur-md shadow-sm">
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -96,11 +115,7 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`px-6 py-2 rounded-full text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300
-                    ${
-                      isActive
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "text-muted hover:text-foreground hover:bg-black/5"
-                    }
+                    ${isActive ? "bg-primary text-white shadow-md shadow-primary/20" : "text-muted hover:text-foreground hover:bg-black/5"}
                   `}
                 >
                   {link.label}
@@ -109,7 +124,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* ================= CTA BUTTON ================= */}
+          {/* DESKTOP CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/contact"
@@ -120,52 +135,118 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* ================= MOBILE TOGGLE ================= */}
+          {/* MOBILE TOGGLE (Icon xoay hiệu ứng) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2.5 text-foreground border border-border bg-white/80 backdrop-blur-md rounded-sm z-50 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
+            className="lg:hidden p-2 text-[#16579e] rounded-full hover:bg-blue-50 transition-colors relative z-50"
           >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
+            <AnimatePresence mode="wait">
+              {isMobileMenuOpen ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <X className="w-7 h-7" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Menu className="w-7 h-7" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </button>
         </div>
+
+        {/* === PREMIUM MOBILE DROPDOWN === */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              variants={menuVars}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="fixed left-0 top-[70px] w-full bg-white/95 backdrop-blur-2xl border-b border-black/5 shadow-2xl origin-top overflow-hidden lg:hidden"
+            >
+              <div className="container mx-auto px-6 pb-8 pt-4">
+                {/* Background Decor (Logo mờ xoay nhẹ) */}
+                <div className="absolute -right-10 top-10 w-64 h-64 opacity-[0.03] pointer-events-none">
+                  <img
+                    src="/logo-blue.png"
+                    className="w-full h-full object-contain animate-[spin_60s_linear_infinite]"
+                    alt=""
+                  />
+                </div>
+
+                {/* Danh sách Link (Hiệu ứng bay lên) */}
+                <motion.div
+                  variants={containerVars}
+                  initial="initial"
+                  animate="open"
+                  exit="initial"
+                  className="flex flex-col gap-1 relative z-10"
+                >
+                  {NAV_LINKS.map((link, idx) => {
+                    const isActive = pathname === link.href;
+                    return (
+                      <div key={idx} className="overflow-hidden">
+                        <motion.div variants={mobileLinkVars}>
+                          <Link
+                            href={link.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`group flex items-center justify-between py-4 border-b border-dashed border-gray-100
+                              ${isActive ? "text-[#16579e]" : "text-gray-600"}
+                            `}
+                          >
+                            <span
+                              className={`text-sm font-bold uppercase tracking-wider transition-all group-hover:text-[#16579e] group-hover:pl-2`}
+                            >
+                              {link.label}
+                            </span>
+                          </Link>
+                        </motion.div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Nút Liên hệ cuối cùng */}
+                  {/* <div className="overflow-hidden mt-6">
+                    <motion.div variants={mobileLinkVars}>
+                      <Link
+                        href="/contact"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-3 w-full py-4 bg-[#16579e] text-white rounded-sm text-sm font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-transform hover:bg-[#0F265C]"
+                      >
+                        <Phone className="w-5 h-5" /> Nhận tư vấn ngay
+                      </Link>
+                    </motion.div>
+                  </div> */}
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* ================= MOBILE MENU OVERLAY ================= */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl flex flex-col items-center justify-center space-y-8 lg:hidden"
-          >
-            {NAV_LINKS.map((link, idx) => (
-              <Link
-                key={idx}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-2xl font-serif font-medium text-foreground hover:text-primary transition-colors relative group"
-              >
-                {link.label}
-              </Link>
-            ))}
-
-            <div className="flex flex-col gap-4 mt-8 w-full px-12">
-              <Link
-                href="/contact"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full py-4 bg-primary text-white font-bold uppercase tracking-widest rounded-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              >
-                <Phone className="w-4 h-4" /> Liên hệ tư vấn
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Backdrop mờ (Bấm ra ngoài để tắt) */}
+      {isMobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
+          style={{ top: "70px" }} // Tránh che mất header
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </>
   );
 }
