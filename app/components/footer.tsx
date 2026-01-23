@@ -1,60 +1,161 @@
-// components/footer.tsx
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
-import {
-  Diamond,
-  ArrowRight,
-  Facebook,
-  Instagram,
-  Linkedin,
-} from "lucide-react";
+import { ArrowRight, Facebook, Loader2, Send } from "lucide-react";
+
+// 1. IMPORT FONT MONTSERRAT (Để đồng bộ font chữ logo với Navbar)
+import { Montserrat } from "next/font/google";
+import { CONTACT_INFO } from "../data/contact_content";
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["900"],
+  display: "swap",
+});
+
+const GOOGLE_FORM_CONFIG = {
+  // Link này lấy từ Google Form -> Get Pre-filled link -> Copy -> Đổi đuôi /viewform thành /formResponse
+  URL: "https://docs.google.com/forms/d/e/1FAIpQLSe6mYTbFhYkYRJ6am4vP7Nrc3ev4T0LPH3KdSTGeSuJ30Q-mw/formResponse",
+
+  // Các mã entry lấy từ link Pre-filled (Xem hướng dẫn bên dưới nếu quên)
+  ENTRY_IDS: {
+    NAME: "entry.657724628", // Mã cho ô Họ tên
+    PHONE: "entry.75967512", // Mã cho ô Số điện thoại
+    EMAIL: "entry.1327365006", // Mã cho ô Email
+    MESSAGE: "entry.793401319", // Mã cho ô Nội dung
+  },
+};
 
 export default function Footer() {
+  const [loading, setLoading] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Chặn reload trang
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const googleFormData = new FormData();
+
+    // Map dữ liệu từ form React sang các entry của Google Form
+    googleFormData.append(
+      GOOGLE_FORM_CONFIG.ENTRY_IDS.NAME,
+      "Người dùng yêu cầu tư vấn từ Footer",
+    );
+    googleFormData.append(GOOGLE_FORM_CONFIG.ENTRY_IDS.PHONE, "");
+    googleFormData.append(
+      GOOGLE_FORM_CONFIG.ENTRY_IDS.EMAIL,
+      (formData.get("user_email") as string) || "",
+    );
+    googleFormData.append(
+      GOOGLE_FORM_CONFIG.ENTRY_IDS.MESSAGE,
+      "Liên hệ để tư vấn báo giá dịch vụ.",
+    );
+
+    try {
+      // Gửi request không đồng bộ (no-cors để bypass lỗi chặn của trình duyệt)
+      await fetch(GOOGLE_FORM_CONFIG.URL, {
+        method: "POST",
+        body: googleFormData,
+        mode: "no-cors",
+      });
+
+      // Thông báo thành công
+      alert("Gửi yêu cầu thành công! Chúng tôi sẽ liên hệ lại sớm nhất.");
+
+      if (formRef.current) {
+        formRef.current.reset();
+      }
+    } catch (error) {
+      console.error("Lỗi gửi form:", error);
+      alert("Có lỗi xảy ra, vui lòng thử lại hoặc liên hệ hotline.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    // Sử dụng bg-surface-dark cho nền tối sang trọng
-    <footer className="bg-surface-dark pt-24 pb-12 border-t border-white/5 relative overflow-hidden text-white">
-      {/* Decorative BG Text */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-[0.03]">
-        <span className="text-[20vw] font-serif leading-none whitespace-nowrap text-white absolute -top-10 left-0 blur-sm select-none">
-          HOÀNG THẢO ANH
-        </span>
+    // Sử dụng bg-[#0F265C] (Xanh Navy đậm) làm nền chủ đạo giống ảnh
+    <footer className="bg-surface-dark pt-16 pb-12 border-t border-white/5 relative overflow-hidden text-white">
+      {/* Nền chữ chìm trang trí (Giữ nguyên hiệu ứng đẹp) */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none select-none opacity-[0.02] flex items-center">
+        {/* animation-duration: 30s để chạy thật chậm */}
+        <div className="whitespace-nowrap animate-[marquee_30s_linear_infinite] flex gap-20">
+          <span className="text-[15vw] font-black font-serif leading-none text-white">
+            HOÀNG THẢO ANH
+          </span>
+          {/* Lặp lại để chạy liên tục */}
+          <span className="text-[15vw] font-black font-serif leading-none text-white">
+            HOÀNG THẢO ANH
+          </span>
+          <span className="text-[15vw] font-black font-serif leading-none text-white">
+            HOÀNG THẢO ANH
+          </span>
+        </div>
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 md:px-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 ">
-          {/* Brand Column */}
-          <div className="space-y-8">
-            <Link href="/" className="flex items-center gap-3 group">
-              <Diamond className="text-primary w-8 h-8 group-hover:rotate-45 transition-transform duration-500" />
-              <span className="font-serif text-2xl font-bold text-white">
-                HOÀNG THẢO ANH
-              </span>
-            </Link>
-            <p className="text-white/70 font-normal text-sm leading-relaxed pr-8">
-              Định hình lại tiêu chuẩn in ấn cao cấp tại Việt Nam. Chúng tôi tin
-              rằng mỗi tờ giấy đều có linh hồn và câu chuyện riêng.
-            </p>
-            <div className="flex gap-4">
-              {[Facebook, Instagram, Linkedin].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-primary hover:border-primary hover:text-white transition-all duration-300"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16 items-start">
+          {/* ================= CỘT 1: THƯƠNG HIỆU & SỨ MỆNH ================= */}
+          <div className="space-y-6">
+            {/* LOGO ĐỒNG BỘ VỚI NAVBAR */}
+            <Link href="/" className="flex items-center  group">
+              {/* Ảnh Logo */}
+              <div className="w-16 h-16 flex items-center justify-center -ml-3">
+                <img
+                  src="/logo-white.png"
+                  alt="Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {/* Chữ Logo */}
+              <div className="flex flex-col justify-center">
+                <h2
+                  className={`${montserrat.className} text-lg font-black text-white uppercase leading-none tracking-tight`}
                 >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
+                  HOÀNG THẢO ANH
+                </h2>
+                <span className="text-[0.6rem] uppercase tracking-[0.2em] text-white/70 font-bold mt-1">
+                  Khác biệt tạo thành công
+                </span>
+              </div>
+            </Link>
+
+            {/* Nội dung sứ mệnh từ ảnh */}
+            <div className="text-white text-justify rounded-sm text-sm font-medium leading-relaxed shadow-lg ">
+              Với sứ mệnh mang đến những sản phẩm chất lượng, Hoàng Thảo Anh cam
+              kết cung cấp các giải pháp in ấn toàn diện, từ ý tưởng đến thành
+              phẩm, đảm bảo chuẩn chất lượng – đúng tiến độ – giá trị lâu dài.
+            </div>
+
+            {/* Mạng xã hội (Facebook, Zalo, X gạch chéo) */}
+            <div className="flex gap-4 items-center mt-4">
+              {/* Facebook */}
+              <a
+                href="#"
+                className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-[#1877F2] hover:border-[#1877F2] transition-all"
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
+
+              {/* Zalo (Tự tạo nút chữ vì Zalo không có icon trong lucide) */}
+              <a
+                href="#s"
+                className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center text-white font-black text-[10px] hover:bg-[#1877F2] hover:border-[#1877F2] transition-all"
+              >
+                Zalo
+              </a>
             </div>
           </div>
 
-          {/* Links Column */}
+          {/* ================= CỘT 2: DANH MỤC DỊCH VỤ ================= */}
           <div>
-            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-8 border-b border-primary/50 pb-2 inline-block">
-              Danh mục
+            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
+              DANH MỤC
             </h4>
-            <ul className="space-y-4 text-sm text-white/60 font-medium">
+            <ul className="space-y-3 text-sm text-white/70 font-medium">
               {[
                 "In ấn",
                 "Thi công - Lắp đặt - Gia công quảng cáo",
@@ -64,7 +165,7 @@ export default function Footer() {
                 <li key={item}>
                   <Link
                     href="/services"
-                    className="hover:text-primary hover:pl-2 transition-all duration-300 block"
+                    className="hover:text-white hover:translate-x-1 transition-all duration-300 block"
                   >
                     {item}
                   </Link>
@@ -73,39 +174,79 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact Column */}
+          {/* ================= CỘT 3: VĂN PHÒNG & LIÊN HỆ ================= */}
           <div>
-            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-8 border-b border-primary/50 pb-2 inline-block">
-              Văn phòng
+            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
+              VĂN PHÒNG
             </h4>
-            <ul className="space-y-4 text-sm text-white/60 font-medium">
-              <li>123 Nguyễn Văn Cừ, Q.1, TP.HCM</li>
-              <li className="hover:text-primary transition-colors cursor-pointer">
-                +84 28 3999 8888
+            <ul className="space-y-4 text-sm text-white/70 font-medium">
+              <li className="flex flex-col gap-1">
+                <span className="text-white font-bold text-xs uppercase opacity-50">
+                  Địa chỉ
+                </span>
+                <span className="text-white rounded-sm inline-block w-fit font-bold hover:text-primary-light hover:translate-x-1 transition-all">
+                  {CONTACT_INFO.address}
+                </span>
               </li>
-              <li className="hover:text-primary transition-colors cursor-pointer">
-                hello@artprint.vn
+              <li className="flex flex-col gap-1">
+                <span className="text-white font-bold text-xs uppercase opacity-50">
+                  Hotline
+                </span>
+                <a
+                  href="tel:0909979376"
+                  className="text-white  rounded-sm inline-block w-fit font-bold hover:text-primary-light hover:translate-x-1 transition-all"
+                >
+                  {CONTACT_INFO.hotline}
+                </a>
+              </li>
+              <li className="flex flex-col gap-1">
+                <span className="text-white font-bold text-xs uppercase opacity-50">
+                  Email
+                </span>
+                <a
+                  href="mailto:ctyhoangthaoanh@gmail.com"
+                  className="text-white  rounded-sm inline-block w-fit font-bold hover:text-primary-light hover:translate-x-1 transition-all"
+                >
+                  {CONTACT_INFO.emails[0]}
+                </a>
               </li>
             </ul>
           </div>
 
-          {/* Newsletter Column */}
+          {/* ================= CỘT 4: NHẬN BÁO GIÁ (NEWSLETTER) ================= */}
           <div>
-            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-8 border-b border-primary/50 pb-2 inline-block">
-              Newsletter
+            <h4 className=" text-white  font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
+              Nhận Báo Giá
             </h4>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                handleSubmit(e);
+              }}
+              ref={formRef}
+            >
               <div className="relative group">
                 <input
                   type="email"
-                  className="w-full bg-white/5 border border-white/10 rounded-sm px-4 py-4 text-white placeholder-white/30 focus:outline-none focus:border-primary focus:bg-white/10 transition-all text-sm"
+                  className="w-full bg-white/10 border border-white/20 rounded-sm px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white focus:bg-white/20 transition-all text-sm"
                   placeholder="Email của bạn"
+                  name="user_email"
+                  required
+                  disabled={loading}
                 />
                 <button
                   type="submit"
-                  className="absolute right-2 top-2 h-10 w-10 flex items-center justify-center bg-primary text-white rounded-sm hover:bg-primary-dark transition-colors shadow-lg"
+                  className="absolute right-1 top-1 h-[38px] w-10 flex items-center justify-center bg-[#3B82F6] text-white rounded-sm hover:bg-blue-600 transition-colors shadow-lg"
                 >
-                  <ArrowRight className="w-5 h-5" />
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
                 </button>
               </div>
               <p className="text-xs text-white/40 italic">
@@ -114,19 +255,6 @@ export default function Footer() {
             </form>
           </div>
         </div>
-
-        {/* Bottom Bar
-        <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/10 text-xs text-white/40 uppercase tracking-wider font-bold">
-          <p>© 2026 Hoang Thao Anh. All Rights Reserved.</p>
-          <div className="flex gap-8 mt-4 md:mt-0">
-            <Link href="#" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="hover:text-primary transition-colors">
-              Terms of Use
-            </Link>
-          </div>
-        </div> */}
       </div>
     </footer>
   );

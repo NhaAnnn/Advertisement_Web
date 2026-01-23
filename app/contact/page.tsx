@@ -7,14 +7,10 @@ import { ChevronRight, MapPin, Phone, Mail, Send, Loader2 } from "lucide-react";
 // IMPORT DATA (Giữ nguyên file data của bạn)
 import { CONTACT_INFO } from "../data/contact_content";
 
-// ==========================================
-// 🔴 BƯỚC 1: CẤU HÌNH GOOGLE FORM TẠI ĐÂY
-// ==========================================
 const GOOGLE_FORM_CONFIG = {
   // Link này lấy từ Google Form -> Get Pre-filled link -> Copy -> Đổi đuôi /viewform thành /formResponse
   URL: "https://docs.google.com/forms/d/e/1FAIpQLSe6mYTbFhYkYRJ6am4vP7Nrc3ev4T0LPH3KdSTGeSuJ30Q-mw/formResponse",
 
-  // Các mã entry lấy từ link Pre-filled (Xem hướng dẫn bên dưới nếu quên)
   ENTRY_IDS: {
     NAME: "entry.657724628", // Mã cho ô Họ tên
     PHONE: "entry.75967512", // Mã cho ô Số điện thoại
@@ -128,6 +124,7 @@ export default function ContactPage() {
                 Thông tin liên hệ
               </h3>
               <div className="space-y-8 relative z-10">
+                {/* 1. VĂN PHÒNG CHÍNH */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-sm bg-white/10 border border-white/10 flex items-center justify-center text-primary shrink-0">
                     <MapPin className="w-5 h-5" />
@@ -136,11 +133,18 @@ export default function ContactPage() {
                     <span className="text-xs font-bold uppercase tracking-widest text-white/50 block mb-1">
                       Văn phòng chính
                     </span>
-                    <p className="text-white text-sm leading-relaxed">
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONTACT_INFO.address)}`}
+                      target="_blank" // Mở tab mới
+                      rel="noopener noreferrer"
+                      className="text-white text-sm hover:text-primary transition-colors leading-relaxed"
+                    >
                       {CONTACT_INFO.address}
-                    </p>
+                    </a>
                   </div>
                 </div>
+
+                {/* 2. HOTLINE (Đã sửa CSS cho cân đối với các hàng khác) */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-sm bg-white/10 border border-white/10 flex items-center justify-center text-primary shrink-0">
                     <Phone className="w-5 h-5" />
@@ -149,11 +153,18 @@ export default function ContactPage() {
                     <span className="text-xs font-bold uppercase tracking-widest text-white/50 block mb-1">
                       Hotline tư vấn
                     </span>
-                    <p className="text-white text-lg  font-bold">
+                    <a
+                      href={`tel:${CONTACT_INFO.hotline.replace(/\D/g, "")}`}
+                      // Đổi từ text-lg -> text-base để không bị quá to so với văn bản xung quanh
+                      // Thêm leading-snug để căn dòng chuẩn hơn
+                      className="text-white text-sm  hover:text-primary transition-colors block leading-snug"
+                    >
                       {CONTACT_INFO.hotline}
-                    </p>
+                    </a>
                   </div>
                 </div>
+
+                {/* 3. EMAIL (Link trỏ thẳng sang Gmail) */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-sm bg-white/10 border border-white/10 flex items-center justify-center text-primary shrink-0">
                     <Mail className="w-5 h-5" />
@@ -163,9 +174,16 @@ export default function ContactPage() {
                       Email hỗ trợ
                     </span>
                     {CONTACT_INFO.emails.map((email, i) => (
-                      <p key={i} className="text-white text-sm">
+                      <a
+                        key={i}
+                        // Link mở trình soạn thảo Gmail (Compose)
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`}
+                        target="_blank" // Mở tab mới
+                        rel="noopener noreferrer" // Bảo mật
+                        className="text-white text-sm hover:text-primary transition-colors block mb-1"
+                      >
                         {email}
-                      </p>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -250,7 +268,7 @@ export default function ContactPage() {
                       </>
                     ) : (
                       <>
-                        Gửi yêu cầu{" "}
+                        Gửi yêu cầu
                         <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}

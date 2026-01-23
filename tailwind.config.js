@@ -17,6 +17,7 @@ module.exports = {
 
         //NHÓM CHỮ
         foreground: "#05205f", // Xanh đen đậm (Chữ chính)
+        foreground2: "#16579e", // Xanh đen nhạt hơn (Chữ phụ)
         muted: "#64748b", // Xám (Chữ phụ/Mô tả)
         on: {
           primary: "#ffffff", // Chữ trên nền Primary
@@ -66,6 +67,7 @@ module.exports = {
         "gradient-shift": "gradient-shift 3s ease infinite",
         "bounce-in":
           "bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards",
+        marquee: "marquee 30s linear infinite",
       },
       keyframes: {
         translateX: {
@@ -125,6 +127,10 @@ module.exports = {
             opacity: "1",
             transform: "scale(1) translateY(0)",
           },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-100%)" },
         },
       },
     },
