@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, Phone, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowRight, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Montserrat } from "next/font/google";
 
@@ -20,7 +20,7 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-// --- VARIANT ANIMATION (Cấu hình chuyển động) ---
+// --- VARIANT ANIMATION ---
 const menuVars: Variants = {
   initial: { scaleY: 0 },
   animate: {
@@ -40,7 +40,6 @@ const menuVars: Variants = {
   },
 };
 
-// Thêm ": Variants"
 const containerVars: Variants = {
   initial: { transition: { staggerChildren: 0.09, staggerDirection: -1 } },
   open: {
@@ -52,7 +51,6 @@ const containerVars: Variants = {
   },
 };
 
-// Thêm ": Variants"
 const mobileLinkVars: Variants = {
   initial: {
     y: "30vh",
@@ -74,17 +72,27 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Khóa cuộn trang khi mở menu để tránh lướt nhầm nội dung bên dưới
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+  }, [isMobileMenuOpen]);
+
   return (
     <>
       <header
-        className={`fixed top-0 z-50 w-full transition-all duration-500 border-b
+        // THAY ĐỔI 1: Tăng z-index lên 100 để đè lên mọi content của trang Dịch vụ
+        className={`fixed top-0 z-[100] w-full transition-all duration-500 border-b
         ${
           isScrolled || isMobileMenuOpen
             ? "bg-white/95 backdrop-blur-xl border-black/5 shadow-sm"
             : "bg-transparent border-transparent"
         }`}
       >
-        <div className="max-w-[1800px] mx-auto px-6 md:px-12 py-3 flex items-center justify-between relative z-50 bg-inherit">
+        <div className="max-w-[1800px] mx-auto px-6 md:px-12 py-3 flex items-center justify-between relative z-[101] bg-inherit">
           {/* LOGO */}
           <Link href="/" className="group flex items-center gap-3">
             <div className="relative w-10 h-10 md:w-14 md:h-14 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300">
@@ -135,29 +143,36 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* MOBILE TOGGLE (Icon xoay hiệu ứng) */}
+          {/* MOBILE TOGGLE (ĐÃ SỬA LỖI KHÓ BẤM) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 text-[#16579e] rounded-full hover:bg-blue-50 transition-colors relative z-50"
+            // THAY ĐỔI 2: Fix cứng w-10 h-10 để nút luôn có diện tích bấm ổn định
+            // Thêm active:scale-95 để có phản hồi khi chạm vào
+            className="lg:hidden w-10 h-10 flex items-center justify-center text-[#16579e] rounded-full hover:bg-blue-50 transition-all active:scale-95 relative z-[102]"
+            aria-label="Toggle Menu"
           >
-            <AnimatePresence mode="wait">
+            {/* THAY ĐỔI 3: Bỏ mode="wait" để icon cũ và mới chồng lên nhau trong tích tắc,
+                tránh việc nút bị rỗng nội dung gây mất focus click */}
+            <AnimatePresence>
               {isMobileMenuOpen ? (
                 <motion.div
                   key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.2 }}
+                  className="absolute" // Dùng absolute để icon nằm đè lên nhau tại tâm
                 >
                   <X className="w-7 h-7" />
                 </motion.div>
               ) : (
                 <motion.div
                   key="menu"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
+                  initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.2 }}
+                  className="absolute"
                 >
                   <Menu className="w-7 h-7" />
                 </motion.div>
@@ -166,7 +181,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* === PREMIUM MOBILE DROPDOWN === */}
+        {/* === MOBILE DROPDOWN === */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
@@ -177,7 +192,7 @@ export default function Navbar() {
               className="fixed left-0 top-[70px] w-full bg-white/95 backdrop-blur-2xl border-b border-black/5 shadow-2xl origin-top overflow-hidden lg:hidden"
             >
               <div className="container mx-auto px-6 pb-8 pt-4">
-                {/* Background Decor (Logo mờ xoay nhẹ) */}
+                {/* Background Decor */}
                 <div className="absolute -right-10 top-10 w-64 h-64 opacity-[0.03] pointer-events-none">
                   <img
                     src="/logo-blue.png"
@@ -186,7 +201,6 @@ export default function Navbar() {
                   />
                 </div>
 
-                {/* Danh sách Link (Hiệu ứng bay lên) */}
                 <motion.div
                   variants={containerVars}
                   initial="initial"
@@ -216,19 +230,6 @@ export default function Navbar() {
                       </div>
                     );
                   })}
-
-                  {/* Nút Liên hệ cuối cùng */}
-                  {/* <div className="overflow-hidden mt-6">
-                    <motion.div variants={mobileLinkVars}>
-                      <Link
-                        href="/contact"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center justify-center gap-3 w-full py-4 bg-[#16579e] text-white rounded-sm text-sm font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-transform hover:bg-[#0F265C]"
-                      >
-                        <Phone className="w-5 h-5" /> Nhận tư vấn ngay
-                      </Link>
-                    </motion.div>
-                  </div> */}
                 </motion.div>
               </div>
             </motion.div>
@@ -236,14 +237,15 @@ export default function Navbar() {
         </AnimatePresence>
       </header>
 
-      {/* Backdrop mờ (Bấm ra ngoài để tắt) */}
+      {/* Backdrop */}
       {isMobileMenuOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
-          style={{ top: "70px" }} // Tránh che mất header
+          // THAY ĐỔI 4: Tăng z-index của backdrop để đảm bảo nó che phủ tốt
+          className="fixed inset-0 z-[90] bg-black/20 backdrop-blur-[2px] lg:hidden"
+          style={{ top: "70px" }}
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
