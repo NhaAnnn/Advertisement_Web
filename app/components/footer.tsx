@@ -3,11 +3,12 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Facebook, Loader2, Send } from "lucide-react";
+import { Facebook, Loader2, Send } from "lucide-react";
 
 // 1. IMPORT FONT MONTSERRAT (Để đồng bộ font chữ logo với Navbar)
 import { Montserrat } from "next/font/google";
 import { CONTACT_INFO } from "../data/contact_content";
+import { usePathname } from "next/navigation";
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["900"],
@@ -29,8 +30,16 @@ const GOOGLE_FORM_CONFIG = {
 
 export default function Footer() {
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
 
   const formRef = useRef<HTMLFormElement>(null);
+
+  if (
+    pathname &&
+    (pathname.startsWith("/admin") || pathname.startsWith("/login"))
+  ) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // Chặn reload trang
@@ -134,7 +143,8 @@ export default function Footer() {
             <div className="flex gap-4 items-center mt-4">
               {/* Facebook */}
               <a
-                href="#"
+                href="https://www.facebook.com/profile.php?id=61584185078976"
+                aria-label="Facebook Hoàng Thảo Anh"
                 className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-[#1877F2] hover:border-[#1877F2] transition-all"
               >
                 <Facebook className="w-5 h-5" />
@@ -143,6 +153,7 @@ export default function Footer() {
               {/* Zalo (Tự tạo nút chữ vì Zalo không có icon trong lucide) */}
               <a
                 href="#s"
+                aria-label="Zalo Hoàng Thảo Anh"
                 className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center text-white font-black text-[10px] hover:bg-[#1877F2] hover:border-[#1877F2] transition-all"
               >
                 Zalo
@@ -152,9 +163,9 @@ export default function Footer() {
 
           {/* ================= CỘT 2: DANH MỤC DỊCH VỤ ================= */}
           <div>
-            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
+            <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
               DANH MỤC
-            </h4>
+            </h3>
             <ul className="space-y-3 text-sm text-white/70 font-medium">
               {[
                 "In ấn",
@@ -165,6 +176,7 @@ export default function Footer() {
                 <li key={item}>
                   <Link
                     href="/services"
+                    aria-label={`Dịch vụ ${item}`}
                     className="hover:text-white hover:translate-x-1 transition-all duration-300 block"
                   >
                     {item}
@@ -176,9 +188,9 @@ export default function Footer() {
 
           {/* ================= CỘT 3: VĂN PHÒNG & LIÊN HỆ ================= */}
           <div>
-            <h4 className="text-white font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
+            <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
               VĂN PHÒNG
-            </h4>
+            </h3>
             <ul className="space-y-4 text-sm text-white/70 font-medium">
               <li className="flex flex-col gap-1">
                 <span className="text-white font-bold text-xs uppercase opacity-50">
@@ -215,9 +227,9 @@ export default function Footer() {
 
           {/* ================= CỘT 4: NHẬN BÁO GIÁ (NEWSLETTER) ================= */}
           <div>
-            <h4 className=" text-white  font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
+            <h3 className=" text-white  font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
               Nhận Báo Giá
-            </h4>
+            </h3>
             <form
               className="space-y-4"
               onSubmit={(e) => {
@@ -236,6 +248,7 @@ export default function Footer() {
                 />
                 <button
                   type="submit"
+                  aria-label="Gửi yêu cầu báo giá"
                   className="absolute right-1 top-1 h-[38px] w-10 flex items-center justify-center bg-[#3B82F6] text-white rounded-sm hover:bg-blue-600 transition-colors shadow-lg"
                 >
                   {loading ? (

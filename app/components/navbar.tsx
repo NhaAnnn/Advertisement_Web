@@ -81,6 +81,13 @@ export default function Navbar() {
     }
   }, [isMobileMenuOpen]);
 
+  if (
+    pathname &&
+    (pathname.startsWith("/admin") || pathname.startsWith("/login"))
+  ) {
+    return null;
+  }
+
   return (
     <>
       <header

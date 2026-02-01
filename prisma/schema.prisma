@@ -1,0 +1,34 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Bảng Cấu Hình (Lưu Hero, Contact, Home Lists...)
+model SiteConfig {
+  key       String   @id @unique  // Ví dụ: 'home_hero', 'contact_info', 'home_services'
+  value     Json     // Lưu trữ dữ liệu dạng JSON
+  updatedAt DateTime @updatedAt
+}
+
+// 2. Bảng Dịch Vụ Chi Tiết (Thay thế SERVICE_DB)
+model ServiceContent {
+  id        String   @id @default(cuid())
+  slug      String   @unique // Ví dụ: 'in-billboard'
+  name      String
+  category  String?
+  excerpt   String?
+  coverImage String?
+  content   Json?    // Lưu mảng contentSections (Tiêu đề + Nội dung + Ảnh)
+  specs     Json?    // Lưu thông số kỹ thuật
+  faq       Json?    // Lưu câu hỏi thường gặp
+  gallery    String[] @default([])
+  features   String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
