@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
 import { prisma } from "../../../prisma/prisma"; // Dùng bản singleton
 import { revalidatePath } from "next/cache";

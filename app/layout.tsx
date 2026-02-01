@@ -4,7 +4,6 @@ import { Playfair_Display, Manrope, Cinzel_Decorative } from "next/font/google";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import "./globals.css";
-import { Scroll } from "lucide-react";
 import ScrollFix from "./components/scrollfix";
 
 const playfair = Playfair_Display({
@@ -48,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" style={{ colorScheme: 'light' }} className="light">
+    <html lang="vi" style={{ colorScheme: "light" }} className="light">
       {/* THÊM bg-noir VÀ text-sand VÀO ĐÂY */}
       <body
         className={`${playfair.variable} ${manrope.variable} ${cinzel.variable} font-sans bg-noir text-sand selection:bg-primary/30 selection:text-white antialiased`}

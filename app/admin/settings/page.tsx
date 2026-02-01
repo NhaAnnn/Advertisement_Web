@@ -1,9 +1,13 @@
+/* eslint-disable jsx-a11y/alt-text */
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { CldUploadButton } from "next-cloudinary";
 import { useRouter } from "next/navigation";
+
 import {
   Search,
   Save,
@@ -29,6 +33,7 @@ import { MENU_TREE, CategoryNode } from "../../data/services_content";
 
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
+import { CategorySelect } from "@/app/components/category_select";
 // --- CẤU HÌNH MẶC ĐỊNH ---
 const DEFAULT_CONFIG = {
   hero: {
@@ -1101,8 +1106,7 @@ function ServicesTabContent() {
     const categories: { id: string; name: string; level: number }[] = [];
     const traverse = (nodes: CategoryNode[]) => {
       nodes.forEach((n) => {
-        if (n.level >= 2)
-          categories.push({ id: n.id, name: n.name, level: n.level });
+        categories.push({ id: n.id, name: n.name, level: n.level });
         if (n.children) traverse(n.children);
       });
     };
@@ -1388,20 +1392,12 @@ function ServicesTabContent() {
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">
                           Danh Mục
                         </label>
-                        <select
-                          className="w-full border border-gray-300 p-3 rounded-xl bg-white focus:ring-2 ring-blue-200 outline-none cursor-pointer"
+
+                        <CategorySelect
                           value={selected.category}
-                          onChange={(e) =>
-                            updateField("category", e.target.value)
-                          }
-                        >
-                          {flatCategories.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.level === 3 ? "-- " : ""}
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => updateField("category", val)}
+                          options={flatCategories}
+                        />
                       </div>
                     </div>
                     <div>

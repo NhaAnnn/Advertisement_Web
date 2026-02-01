@@ -12,18 +12,6 @@ export interface ServiceDetailType {
   faq: { q: string; a: string }[];
 }
 
-// Hàm tạo slug (KHỚP HOÀN TOÀN VỚI MENU)
-const toSlug = (str: string) =>
-  str
-    .toLowerCase()
-    .trim()
-    .replace(/ /g, "-")
-    .replace(/\//g, "")
-    .replace(/,/g, "")
-    .replace(/đ/g, "d")
-    .replace(/--/g, "-")
-    .replace(/"/g, ""); // Xử lý thêm dấu ngoặc kép nếu có
-
 // Nội dung mặc định (Fallback)
 const DEFAULT_CONTENT = {
   contentSections: [

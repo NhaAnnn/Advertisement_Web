@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // FILE: app/services/ServicesClient.tsx
-"use client"; // 👈 BẮT BUỘC
+"use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react"; // ❌ Bỏ useEffect thừa
 import Link from "next/link";
 import {
   Search,
@@ -23,7 +24,7 @@ import {
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
 
 const cardVariants: Variants = {
@@ -31,8 +32,34 @@ const cardVariants: Variants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
+    transition: { duration: 0.3, ease: "easeOut" },
   },
+};
+
+// Hàm lấy tất cả ID con cháu (Để chọn cha hiện con)
+const getAllCategoryIds = (node: CategoryNode): string[] => {
+  let ids = [node.id];
+  if (node.children) {
+    node.children.forEach((child) => {
+      ids = [...ids, ...getAllCategoryIds(child)];
+    });
+  }
+  return ids;
+};
+
+// Hàm tìm node trong cây menu theo ID
+const findNodeById = (
+  nodes: CategoryNode[],
+  id: string,
+): CategoryNode | null => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
 };
 
 export default function ServicesClient({
@@ -41,56 +68,40 @@ export default function ServicesClient({
   initialData?: any[];
 }) {
   const typedMenuTree = MENU_TREE as CategoryNode[];
+
+  // --- 1. STATE CHỈ LƯU CÁI CẦN THIẾT ---
+  // Chỉ lưu ID đang chọn, không lưu danh sách bài viết
+  const [activeNodeId, setActiveNodeId] = useState<string>(typedMenuTree[0].id);
   const [expandedIds, setExpandedIds] = useState<string[]>([
     typedMenuTree[0].id,
   ]);
-  const [activeTitle, setActiveTitle] = useState<string>(typedMenuTree[0].name);
-  const [activeNodeId, setActiveNodeId] = useState<string>(typedMenuTree[0].id);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [currentArticles, setCurrentArticles] = useState<any[]>([]);
 
-  const getAllCategoryIds = (node: CategoryNode): string[] => {
-    let ids = [node.id];
-    if (node.children) {
-      node.children.forEach((child) => {
-        ids = [...ids, ...getAllCategoryIds(child)];
-      });
-    }
-    return ids;
-  };
+  // --- 2. TỰ ĐỘNG TÍNH TOÁN DỮ LIỆU (CORE LOGIC) ---
+  // Bất cứ khi nào activeNodeId đổi, biến này tự cập nhật ngay lập tức.
+  // Không cần useEffect, không delay, không lỗi reset.
+  const { currentArticles, activeTitle } = useMemo(() => {
+    // Tìm node hiện tại
+    const currentNode =
+      findNodeById(typedMenuTree, activeNodeId) || typedMenuTree[0];
 
-  const filterProjectsByNode = (node: CategoryNode, sourceData: any[]) => {
-    if (!sourceData) return;
-    const validCategoryIds = getAllCategoryIds(node);
-    const filtered = sourceData.filter((p) =>
+    // Lấy danh sách ID hợp lệ (Chính nó + Con cháu)
+    const validCategoryIds = getAllCategoryIds(currentNode);
+
+    // Lọc bài viết
+    const filtered = initialData.filter((p) =>
       validCategoryIds.includes(p.category),
     );
 
-    setCurrentArticles(
-      filtered.map((p) => ({
-        id: p.id,
-        title: p.name,
-        excerpt: p.excerpt,
-        image: p.coverImage,
-        slug: p.slug || "#",
-        features: p.features || [],
-      })),
-    );
+    return {
+      currentArticles: filtered,
+      activeTitle: currentNode.name,
+    };
+  }, [activeNodeId, initialData]); // Chạy lại khi ID đổi hoặc Data mới về
 
-    setActiveTitle(node.name);
-    setActiveNodeId(node.id);
-    setSearchQuery("");
-  };
-
-  useEffect(() => {
-    if (initialData && initialData.length > 0) {
-      filterProjectsByNode(typedMenuTree[0], initialData);
-    } else {
-      setCurrentArticles([]);
-    }
-  }, [initialData]);
-
+  // --- 3. XỬ LÝ CLICK ĐƠN GIẢN ---
   const handleNodeClick = (node: CategoryNode) => {
+    // Logic Accordion (Đóng/Mở menu)
     if (node.children) {
       setExpandedIds((prev) =>
         prev.includes(node.id)
@@ -98,7 +109,12 @@ export default function ServicesClient({
           : [...prev, node.id],
       );
     }
-    filterProjectsByNode(node, initialData);
+
+    // Chỉ cần set ID, useMemo ở trên sẽ tự lo phần lọc dữ liệu
+    setActiveNodeId(node.id);
+    setSearchQuery(""); // Reset search khi đổi danh mục
+
+    // Scroll nhẹ trên mobile
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       document
         .getElementById("content-area")
@@ -106,24 +122,22 @@ export default function ServicesClient({
     }
   };
 
+  // --- 4. LỌC TÌM KIẾM (SEARCH) ---
   const displayArticles = useMemo(() => {
     if (!searchQuery) return currentArticles;
     const query = searchQuery.toLowerCase();
-    return (initialData || [])
-      .filter((p) => p.name?.toLowerCase().includes(query))
-      .map((p) => ({
-        id: p.id,
-        title: p.name,
-        excerpt: p.excerpt,
-        image: p.coverImage,
-        slug: p.slug || "#",
-        features: p.features || [],
-      }));
-  }, [currentArticles, searchQuery, initialData]);
+    return currentArticles.filter(
+      (p: any) =>
+        p.name?.toLowerCase().includes(query) ||
+        p.excerpt?.toLowerCase().includes(query),
+    );
+  }, [currentArticles, searchQuery]);
 
+  // --- PHẦN RENDER (GIỮ NGUYÊN) ---
   const RecursiveMenuItem = ({ node }: { node: CategoryNode }) => {
     const isExpanded = expandedIds.includes(node.id);
     const isActive = activeNodeId === node.id;
+
     let itemClass = `flex justify-between cursor-pointer py-3 px-5 hover:text-primary transition-colors ${isActive ? "text-primary font-bold" : ""}`;
     if (node.level === 1)
       itemClass +=
@@ -276,18 +290,21 @@ export default function ServicesClient({
                     animate="show"
                     className="grid grid-cols-1 gap-10"
                   >
-                    {displayArticles.map((article, idx) => (
-                      <motion.div variants={cardVariants} key={idx}>
+                    {displayArticles.map((article: any, idx: number) => (
+                      <motion.div
+                        variants={cardVariants}
+                        key={article.id || idx}
+                      >
                         <Link
                           href={`/services/${article.slug || "#"}`}
-                          className="group block relative bg-background border border-border rounded-sm overflow-hidden hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 flex flex-col md:flex-row h-full"
+                          className="group relative bg-background border border-border rounded-sm overflow-hidden hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col md:flex-row h-full"
                         >
                           <div className="md:w-2/5 relative overflow-hidden aspect-video md:aspect-auto bg-gray-100">
-                            {article.image ? (
+                            {article.coverImage ? (
                               <div
-                                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                                 style={{
-                                  backgroundImage: `url('${article.image}')`,
+                                  backgroundImage: `url('${article.coverImage}')`,
                                 }}
                               ></div>
                             ) : (
@@ -300,7 +317,7 @@ export default function ServicesClient({
                           <div className="md:w-3/5 p-8 flex flex-col justify-between">
                             <div>
                               <h3 className="text-2xl font-serif mb-4 group-hover:text-primary transition-colors leading-tight">
-                                {article.title}
+                                {article.name || article.title}
                               </h3>
                               <p className="text-sm text-muted leading-relaxed mb-6 line-clamp-3">
                                 {article.excerpt}
@@ -320,12 +337,10 @@ export default function ServicesClient({
                                     ),
                                   )
                                 ) : (
-                                  <>
-                                    <li className="flex items-start gap-3 text-xs font-medium text-foreground/80">
-                                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />{" "}
-                                      Tư vấn & Thiết kế miễn phí
-                                    </li>
-                                  </>
+                                  <li className="flex items-start gap-3 text-xs font-medium text-foreground/80">
+                                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />{" "}
+                                    Tư vấn & Thiết kế miễn phí
+                                  </li>
                                 )}
                               </ul>
                             </div>
