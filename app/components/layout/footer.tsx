@@ -219,8 +219,10 @@ export default function Footer() {
                   Email
                 </span>
                 <a
-                  href="mailto:ctyhoangthaoanh@gmail.com"
-                  className="text-white  rounded-sm inline-block w-fit font-bold hover:text-primary-light hover:translate-x-1 transition-all"
+                  href="https://mail.google.com/mail/u/0/?view=cm&tf=cm&fs=1&to=ctyhoangthaoanh@gmail.com&su=Liên%20hệ%20báo%20giá%20dịch%20vụ%20in%20ấn&body=Xin%20chào%20Hoàng%20Thảo%20Anh,%0A%0ATôi%20muốn%20tư%20vấn%20về%20các%20dịch%20vụ%20in%20ấn%20và%20quảng%20cáo%20của%20công%20ty%20bạn.%0A%0AVui%20lòng%20liên%20hệ%20lại%20cho%20tôi%20sớm%20nhất.%0A%0ACảm%20ơn!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white rounded-sm inline-block w-fit font-bold hover:text-primary-light hover:translate-x-1 transition-all"
                 >
                   {CONTACT_INFO.emails[0]}
                 </a>

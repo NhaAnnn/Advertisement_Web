@@ -334,12 +334,20 @@ export default function ServiceClient({
                     thước và chất liệu phù hợp nhất.
                   </p>
                   <div className="space-y-3 relative z-10">
-                    <button className="w-full py-3 bg-white text-black font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <a
+                      href="tel:0909979376"
+                      className="w-full py-3 bg-white text-black font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
                       <Phone className="w-4 h-4" /> 0909 979 376
-                    </button>
-                    <button className="w-full py-3 bg-primary text-white font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary-dark transition-all flex items-center justify-center gap-2 shadow-lg">
+                    </a>
+                    <a
+                      href="https://zalo.me/0909979376"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 bg-primary text-white font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary-dark transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
                       <MessageCircle className="w-4 h-4" /> Chat Zalo
-                    </button>
+                    </a>
                   </div>
                 </div>
 

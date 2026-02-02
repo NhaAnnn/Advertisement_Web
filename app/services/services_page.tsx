@@ -232,9 +232,12 @@ export default function ServicesPage({
               <h4 className="font-serif text-xl text-white mb-2 relative z-10">
                 Tư Vấn Miễn Phí
               </h4>
-              <button className="w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all relative z-10 mt-4 shadow-lg">
+              <Link
+                href="/contact"
+                className="block w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all relative z-10 mt-4 shadow-lg text-center"
+              >
                 Gửi Yêu Cầu
-              </button>
+              </Link>
             </div>
           </aside>
 
