@@ -1,10 +1,10 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import { Playfair_Display, Manrope, Cinzel_Decorative } from "next/font/google";
-import Navbar from "./components/navbar";
-import Footer from "./components/footer";
+import Navbar from "./components/layout/navbar";
+import Footer from "./components/layout/footer";
 import "./globals.css";
-import ScrollFix from "./components/scrollfix";
+import ScrollFix from "./components/UI/scrollfix";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -48,7 +48,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" style={{ colorScheme: "light" }} className="light">
-      {/* THÊM bg-noir VÀ text-sand VÀO ĐÂY */}
       <body
         className={`${playfair.variable} ${manrope.variable} ${cinzel.variable} font-sans bg-noir text-sand selection:bg-primary/30 selection:text-white antialiased`}
       >

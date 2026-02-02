@@ -1,5 +1,3 @@
-/* eslint-disable jsx-a11y/alt-text */
-/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -26,14 +24,17 @@ import {
   RefreshCcw,
   X,
   MapPin,
+  HelpCircle,
+  LogOut,
 } from "lucide-react";
 
 // Import MENU_TREE
 import { MENU_TREE, CategoryNode } from "../../data/services_content";
 
 import { signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
-import { CategorySelect } from "@/app/components/category_select";
+import { CategorySelect } from "@/app/components/UI/category_select";
+import Image from "next/image";
+
 // --- CẤU HÌNH MẶC ĐỊNH ---
 const DEFAULT_CONFIG = {
   hero: {
@@ -89,6 +90,8 @@ function HomeTabContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [homeConfig, setHomeConfig] = useState<any>(DEFAULT_CONFIG);
+
+  const [isChanged, setIsChanged] = useState(false);
 
   // REFS ĐỂ SCROLL
   const showcaseListRef = useRef<HTMLDivElement>(null);
@@ -174,11 +177,19 @@ function HomeTabContent() {
         }),
       ]);
       alert("✨ Đã lưu giao diện Trang Chủ!");
+      setIsChanged(false);
+      router.refresh();
     } catch (e) {
       alert("❌ Lỗi khi lưu!");
     } finally {
       setSaving(false);
     }
+  };
+
+  // Helper để cập nhật state Hero và bật cờ isChanged
+  const updateHero = (newHeroState: any) => {
+    setHomeConfig({ ...homeConfig, hero: newHeroState });
+    setIsChanged(true);
   };
 
   const updateHomeItem = (
@@ -194,10 +205,27 @@ function HomeTabContent() {
     if (newList[index]) {
       newList[index] = { ...newList[index], [field]: value };
       setHomeConfig({ ...homeConfig, [section]: newList });
+      setIsChanged(true);
     }
   };
 
-  // Hàm di chuyển vị trí (Lên/Xuống)
+  // Hàm thêm mới Item
+  const addItem = (section: string, newItem: any) => {
+    setHomeConfig({
+      ...homeConfig,
+      [section]: [...homeConfig[section], newItem],
+    });
+    setIsChanged(true);
+  };
+
+  // Hàm xóa Item
+  const removeItem = (section: string, index: number) => {
+    const newList = [...homeConfig[section]];
+    newList.splice(index, 1);
+    setHomeConfig({ ...homeConfig, [section]: newList });
+    setIsChanged(true);
+  };
+
   const moveItem = (
     section: "process" | "portfolio",
     index: number,
@@ -210,6 +238,7 @@ function HomeTabContent() {
       [list[index], list[index + 1]] = [list[index + 1], list[index]];
     }
     setHomeConfig({ ...homeConfig, [section]: list });
+    setIsChanged(true);
   };
 
   if (loading)
@@ -237,24 +266,36 @@ function HomeTabContent() {
       {/* Header Action */}
       <div className="flex justify-between items-center bg-white/80 p-5 rounded-2xl shadow-sm border border-gray-200 sticky top-0 z-20 backdrop-blur-md">
         <div>
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Monitor className="w-6 h-6 text-[#16579e]" /> Chỉnh sửa Trang Chủ
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Monitor className="w-6 h-6 text-[#16579e]" /> Chỉnh sửa Trang Chủ
+            </h2>
+
+            {isChanged && (
+              <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
+                ⚠️ Chưa lưu
+              </span>
+            )}
+          </div>
           <p className="text-sm text-gray-500 mt-1">
             Thay đổi nội dung hiển thị cho khách hàng.
           </p>
         </div>
         <button
           onClick={saveHomeConfig}
-          disabled={saving}
-          className="bg-gradient-to-r from-[#16579e] to-blue-600 text-white px-8 py-3 rounded-xl text-sm font-bold hover:shadow-lg hover:scale-105 transition-all flex gap-2 items-center disabled:opacity-70"
+          disabled={saving || !isChanged} // Mờ đi nếu chưa sửa gì
+          className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center disabled:opacity-70 ${
+            isChanged
+              ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg animate-pulse"
+              : "bg-[#16579e] text-white hover:bg-blue-800"
+          }`}
         >
           {saving ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <Save className="w-5 h-5" />
           )}{" "}
-          LƯU THAY ĐỔI
+          {isChanged ? "LƯU THAY ĐỔI (*)" : "Đã Lưu"}
         </button>
       </div>
 
@@ -278,14 +319,11 @@ function HomeTabContent() {
                   className="w-full bg-white border border-gray-300 p-3 rounded-lg text-lg font-medium focus:ring-2 ring-blue-400 outline-none"
                   value={homeConfig.hero.title?.line1 || ""}
                   onChange={(e) =>
-                    setHomeConfig({
-                      ...homeConfig,
-                      hero: {
-                        ...homeConfig.hero,
-                        title: {
-                          ...homeConfig.hero.title,
-                          line1: e.target.value,
-                        },
+                    updateHero({
+                      ...homeConfig.hero,
+                      title: {
+                        ...homeConfig.hero.title,
+                        line1: e.target.value,
                       },
                     })
                   }
@@ -295,14 +333,11 @@ function HomeTabContent() {
                   className="w-full bg-white border border-gray-300 p-3 rounded-lg text-lg font-medium focus:ring-2 ring-blue-400 outline-none"
                   value={homeConfig.hero.title?.line2 || ""}
                   onChange={(e) =>
-                    setHomeConfig({
-                      ...homeConfig,
-                      hero: {
-                        ...homeConfig.hero,
-                        title: {
-                          ...homeConfig.hero.title,
-                          line2: e.target.value,
-                        },
+                    updateHero({
+                      ...homeConfig.hero,
+                      title: {
+                        ...homeConfig.hero.title,
+                        line2: e.target.value,
                       },
                     })
                   }
@@ -312,14 +347,11 @@ function HomeTabContent() {
                   className="w-full bg-white border border-gray-300 p-3 rounded-lg text-lg font-medium focus:ring-2 ring-blue-400 outline-none"
                   value={homeConfig.hero.title?.line3 || ""}
                   onChange={(e) =>
-                    setHomeConfig({
-                      ...homeConfig,
-                      hero: {
-                        ...homeConfig.hero,
-                        title: {
-                          ...homeConfig.hero.title,
-                          line3: e.target.value,
-                        },
+                    updateHero({
+                      ...homeConfig.hero,
+                      title: {
+                        ...homeConfig.hero.title,
+                        line3: e.target.value,
                       },
                     })
                   }
@@ -335,10 +367,7 @@ function HomeTabContent() {
                 className="w-full border border-gray-300 p-4 rounded-xl text-sm h-28 leading-relaxed focus:ring-2 ring-blue-400 outline-none resize-none shadow-inner"
                 value={homeConfig.hero.desc || ""}
                 onChange={(e) =>
-                  setHomeConfig({
-                    ...homeConfig,
-                    hero: { ...homeConfig.hero, desc: e.target.value },
-                  })
+                  updateHero({ ...homeConfig.hero, desc: e.target.value })
                 }
                 placeholder="Nhập đoạn văn giới thiệu..."
               />
@@ -351,9 +380,11 @@ function HomeTabContent() {
               </span>
               <div className="aspect-video w-full bg-gray-300 rounded-lg mb-3 overflow-hidden relative shadow-inner">
                 {homeConfig.hero.mainImage ? (
-                  <img
+                  <Image
                     src={homeConfig.hero.mainImage}
+                    alt="Ảnh Nền"
                     className="w-full h-full object-cover"
+                    fill
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic">
@@ -364,9 +395,9 @@ function HomeTabContent() {
               <CldUploadButton
                 uploadPreset="hoanganhthao-upload"
                 onSuccess={(r: any) =>
-                  setHomeConfig({
-                    ...homeConfig,
-                    hero: { ...homeConfig.hero, mainImage: r.info.secure_url },
+                  updateHero({
+                    ...homeConfig.hero,
+                    mainImage: r.info.secure_url,
                   })
                 }
                 className="w-full bg-white border border-gray-300 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 shadow-sm"
@@ -380,9 +411,11 @@ function HomeTabContent() {
               </span>
               <div className="aspect-video w-full bg-gray-300 rounded-lg mb-3 overflow-hidden relative shadow-inner">
                 {homeConfig.hero.floatingImage ? (
-                  <img
+                  <Image
                     src={homeConfig.hero.floatingImage}
+                    alt="Ảnh Nổi (3D)"
                     className="w-full h-full object-contain p-2"
+                    fill
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs italic">
@@ -393,12 +426,9 @@ function HomeTabContent() {
               <CldUploadButton
                 uploadPreset="hoanganhthao-upload"
                 onSuccess={(r: any) =>
-                  setHomeConfig({
-                    ...homeConfig,
-                    hero: {
-                      ...homeConfig.hero,
-                      floatingImage: r.info.secure_url,
-                    },
+                  updateHero({
+                    ...homeConfig.hero,
+                    floatingImage: r.info.secure_url,
                   })
                 }
                 className="w-full bg-white border border-gray-300 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 shadow-sm"
@@ -432,8 +462,10 @@ function HomeTabContent() {
                 <div className="w-28 flex-shrink-0 flex flex-col gap-3">
                   <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative group/img cursor-pointer">
                     {item.image ? (
-                      <img
+                      <Image
                         src={item.image}
+                        alt={`Service image ${idx + 1}`}
+                        fill
                         className="w-full h-full object-cover transition-transform group-hover/img:scale-110"
                       />
                     ) : (
@@ -540,19 +572,13 @@ function HomeTabContent() {
           </div>
           <button
             onClick={() => {
-              setHomeConfig({
-                ...homeConfig,
-                showcase: [
-                  ...safeShowcase,
-                  {
-                    title: "",
-                    sub: "",
-                    desc: "",
-                    image: "",
-                    tag: "",
-                    link: "",
-                  },
-                ],
+              addItem("showcase", {
+                title: "",
+                sub: "",
+                desc: "",
+                image: "",
+                tag: "",
+                link: "",
               });
               setTimeout(
                 () =>
@@ -589,9 +615,11 @@ function HomeTabContent() {
                 >
                   <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 flex-shrink-0 relative group/img overflow-hidden shadow-inner">
                     {item.image ? (
-                      <img
+                      <Image
                         src={item.image}
+                        fill
                         className="w-full h-full object-cover transition-transform group-hover/img:scale-110"
+                        alt={"Showcase image " + (idx + 1)}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-800 font-bold">
@@ -692,9 +720,7 @@ function HomeTabContent() {
                   <button
                     onClick={() => {
                       if (confirm("Xóa mục này?")) {
-                        const n = [...homeConfig.showcase];
-                        n.splice(idx, 1);
-                        setHomeConfig({ ...homeConfig, showcase: n });
+                        removeItem("showcase", idx);
                       }
                     }}
                     className="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
@@ -719,12 +745,10 @@ function HomeTabContent() {
           </div>
           <button
             onClick={() => {
-              setHomeConfig({
-                ...homeConfig,
-                process: [
-                  ...safeProcess,
-                  { id: "0" + (safeProcess.length + 1), title: "", desc: "" },
-                ],
+              addItem("process", {
+                id: "0" + (safeProcess.length + 1),
+                title: "",
+                desc: "",
               });
               setTimeout(
                 () =>
@@ -755,9 +779,7 @@ function HomeTabContent() {
                   <button
                     onClick={() => {
                       if (confirm("Xóa bước này?")) {
-                        const n = [...safeProcess];
-                        n.splice(idx, 1);
-                        setHomeConfig({ ...homeConfig, process: n });
+                        removeItem("process", idx);
                       }
                     }}
                     className="p-1 hover:bg-red-50 rounded text-red-500"
@@ -801,12 +823,11 @@ function HomeTabContent() {
           </div>
           <button
             onClick={() => {
-              setHomeConfig({
-                ...homeConfig,
-                portfolio: [
-                  ...safePortfolio,
-                  { type: "image", category: "", title: "", image: "" },
-                ],
+              addItem("portfolio", {
+                type: "image",
+                category: "",
+                title: "",
+                image: "",
               });
               setTimeout(
                 () =>
@@ -856,9 +877,7 @@ function HomeTabContent() {
                   <button
                     onClick={() => {
                       if (confirm("Xóa mục này?")) {
-                        const n = [...safePortfolio];
-                        n.splice(idx, 1);
-                        setHomeConfig({ ...homeConfig, portfolio: n });
+                        removeItem("portfolio", idx);
                       }
                     }}
                     className="p-1.5 hover:bg-red-50 rounded text-red-500"
@@ -884,9 +903,11 @@ function HomeTabContent() {
                   {(item.type === "image" || item.type === "card") && (
                     <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden relative group/img border">
                       {item.image ? (
-                        <img
+                        <Image
                           src={item.image}
+                          alt={`Portfolio image ${idx + 1}`}
                           className="w-full h-full object-cover"
+                          fill
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
@@ -1062,7 +1083,10 @@ function ServicesTabContent() {
   const featuresRef = useRef<HTMLDivElement>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // 1. Tải toàn bộ danh sách (bao gồm cả content) 1 lần duy nhất
+  // Trạng thái theo dõi thay đổi chưa lưu
+  const [isChanged, setIsChanged] = useState(false);
+
+  // 1. Tải toàn bộ danh sách
   const fetchList = useCallback(async () => {
     setIsInitialLoading(true);
     try {
@@ -1071,7 +1095,6 @@ function ServicesTabContent() {
       });
       const data = await res.json();
       if (Array.isArray(data)) {
-        // Chuẩn hóa dữ liệu ngay khi tải về
         const normalizedData = data.map((item: any) => ({
           ...item,
           content: item.content || [],
@@ -1093,12 +1116,13 @@ function ServicesTabContent() {
     fetchList();
   }, [fetchList]);
 
-  // 2. Chọn bài viết từ RAM (Không gọi API -> 0ms delay)
+  // 2. Chọn bài viết từ RAM
   const selectService = (id: string) => {
     setIsCreating(false);
+    setIsChanged(false); // Reset cờ thay đổi
     const found = list.find((item) => item.id === id);
     if (found) {
-      setSelected(JSON.parse(JSON.stringify(found))); // Deep clone để không sửa trực tiếp vào list gốc
+      setSelected(JSON.parse(JSON.stringify(found)));
     }
   };
 
@@ -1116,6 +1140,7 @@ function ServicesTabContent() {
 
   const createNew = () => {
     setIsCreating(true);
+    setIsChanged(true);
     setSelected({
       name: "",
       slug: "",
@@ -1128,6 +1153,11 @@ function ServicesTabContent() {
       specs: [],
       faq: [],
     });
+  };
+
+  const updateField = (f: string, v: any) => {
+    setSelected((p: any) => ({ ...p, [f]: v }));
+    setIsChanged(true); // Đánh dấu đã thay đổi
   };
 
   const save = async () => {
@@ -1143,8 +1173,8 @@ function ServicesTabContent() {
       if (res.ok) {
         const savedData = await res.json();
         alert("✅ Đã lưu thành công!");
+        setIsChanged(false); // Tắt cờ thay đổi
 
-        // Cập nhật lại list local ngay lập tức
         setList((prev) => {
           const index = prev.findIndex((item) => item.id === savedData.id);
           const normalized = {
@@ -1152,6 +1182,8 @@ function ServicesTabContent() {
             content: savedData.content || [],
             gallery: savedData.gallery || [],
             features: savedData.features || [],
+            specs: savedData.specs || [],
+            faq: savedData.faq || [],
           };
 
           if (index > -1) {
@@ -1163,7 +1195,8 @@ function ServicesTabContent() {
           }
         });
 
-        // router.refresh();
+        router.refresh(); // Refresh lại trang web chính
+
         if (isCreating) {
           setIsCreating(false);
           setSelected((prev: any) => ({ ...prev, id: savedData.id }));
@@ -1179,23 +1212,22 @@ function ServicesTabContent() {
   };
 
   const del = async () => {
-    if (!confirm("Xóa bài viết này?")) return;
+    if (!confirm("⚠️ Xóa bài viết này? Hành động không thể hoàn tác!")) return;
     setLoading(true);
     try {
       await fetch(`/api/services?slug=${selected.slug}`, { method: "DELETE" });
-      alert("Đã xóa!");
+      alert("🗑️ Đã xóa thành công!");
       setList((prev) => prev.filter((item) => item.id !== selected.id));
       setSelected(null);
       setIsCreating(false);
+      setIsChanged(false);
+      router.refresh(); // Refresh lại trang web chính
     } catch (e) {
       alert("Lỗi khi xóa");
     } finally {
       setLoading(false);
     }
   };
-
-  const updateField = (f: string, v: any) =>
-    setSelected((p: any) => ({ ...p, [f]: v }));
 
   const generateSlug = (name: string) => {
     const slug = name
@@ -1211,6 +1243,7 @@ function ServicesTabContent() {
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/[\s]+/g, "-");
     setSelected((p: any) => ({ ...p, name, slug }));
+    setIsChanged(true);
   };
 
   const updateSection = (i: number, f: string, v: any) => {
@@ -1323,9 +1356,17 @@ function ServicesTabContent() {
                     </span>
                   )}
                 </div>
-                <h2 className="text-2xl font-black text-gray-800">
-                  {isCreating ? "📝 Bài Viết Mới" : selected.name}
-                </h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-black text-gray-800">
+                    {isCreating ? "📝 Bài Viết Mới" : selected.name}
+                  </h2>
+                  {/* Cảnh báo thay đổi */}
+                  {isChanged && (
+                    <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
+                      ⚠️ Chưa lưu
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex gap-3">
                 {!isCreating && (
@@ -1338,10 +1379,19 @@ function ServicesTabContent() {
                 )}
                 <button
                   onClick={save}
-                  className="flex items-center gap-2 bg-[#16579e] text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-md hover:shadow-lg active:scale-95"
+                  disabled={!isChanged && !isCreating}
+                  className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95 ${
+                    isChanged || isCreating
+                      ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg animate-pulse"
+                      : "bg-[#16579e] text-white hover:bg-blue-800"
+                  }`}
                 >
                   <Save className="w-4 h-4" />{" "}
-                  {isCreating ? "Tạo Ngay" : "Lưu Thay Đổi"}
+                  {isCreating
+                    ? "Tạo Ngay"
+                    : isChanged
+                      ? "Lưu Thay Đổi (*)"
+                      : "Đã Lưu"}
                 </button>
               </div>
             </div>
@@ -1392,7 +1442,6 @@ function ServicesTabContent() {
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">
                           Danh Mục
                         </label>
-
                         <CategorySelect
                           value={selected.category}
                           onChange={(val) => updateField("category", val)}
@@ -1446,8 +1495,12 @@ function ServicesTabContent() {
                         <div className="absolute -left-3 top-6 bg-gray-800 text-white text-xs px-2 py-1 rounded-r-md font-bold shadow-sm">
                           #{i + 1}
                         </div>
+                        {/* Nút xóa đoạn nội dung */}
                         <button
-                          onClick={() => removeContentSection(i)}
+                          onClick={() => {
+                            if (confirm("Xóa đoạn này?"))
+                              removeContentSection(i);
+                          }}
                           className="absolute top-4 right-4 text-gray-300 hover:text-red-500 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1481,9 +1534,13 @@ function ServicesTabContent() {
                           />
                           <div className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center bg-white h-40 relative group/img overflow-hidden">
                             {s.image ? (
-                              <img
+                              <Image
                                 src={s.image}
                                 className="w-full h-full object-contain p-2"
+                                alt={`Section image ${i + 1}`}
+                                width={400}
+                                height={320}
+                                sizes="(max-width: 768px) 100vw, 400px"
                               />
                             ) : (
                               <div className="text-center text-gray-800">
@@ -1510,27 +1567,264 @@ function ServicesTabContent() {
                     ))}
                   </div>
                 </div>
+
+                {/* --- BLOCK MỚI: THƯ VIỆN ẢNH (GALLERY) --- */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-lg text-[#16579e]">
+                        <ImageIcon className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-lg">
+                        Thư Viện Ảnh (Gallery)
+                      </h3>
+                    </div>
+                    <CldUploadButton
+                      uploadPreset="hoanganhthao-upload"
+                      options={{ multiple: true }}
+                      onSuccess={(r: any) =>
+                        setSelected((p: any) => ({
+                          ...p,
+                          gallery: [...(p.gallery || []), r.info.secure_url],
+                        }))
+                      }
+                      className="bg-blue-50 text-[#16579e] px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 flex items-center gap-2 transition-colors"
+                    >
+                      + Thêm ảnh
+                    </CldUploadButton>
+                  </div>
+
+                  {selected.gallery?.length === 0 ? (
+                    <p className="text-sm text-gray-400 italic text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      Chưa có ảnh nào. Bấm + Thêm ảnh để tải lên.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {selected.gallery?.map((img: string, i: number) => (
+                        <div
+                          key={i}
+                          className="group relative aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100"
+                        >
+                          <Image
+                            src={img}
+                            alt={`Gallery image ${i + 1}`}
+                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                            width={300}
+                            height={300}
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                          />
+                          {/* Nút xóa ảnh */}
+                          <button
+                            onClick={() => {
+                              if (confirm("Xóa ảnh này?"))
+                                removeGalleryImage(i);
+                            }}
+                            className="absolute top-2 right-2 p-1.5 bg-white/90 text-red-500 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-10"
+                            title="Xóa ảnh này"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* --- BLOCK MỚI: THÔNG SỐ KỸ THUẬT (SPECS) - Giao diện bảng --- */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-lg text-[#16579e]">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-lg">
+                        Thông Số Kỹ Thuật
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateField("specs", [
+                          ...(selected.specs || []),
+                          { label: "", value: "" },
+                        ])
+                      }
+                      className="bg-blue-50 text-[#16579e] px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 flex items-center gap-2 transition-colors"
+                    >
+                      + Thêm dòng
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {selected.specs?.length === 0 && (
+                      <p className="text-sm text-gray-400 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                        Chưa có thông số nào. Bấm Thêm dòng để tạo mới.
+                      </p>
+                    )}
+                    {selected.specs?.map((s: any, i: number) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-12 gap-2 items-center bg-gray-50 p-2 rounded-xl border border-transparent hover:border-blue-200 transition-all"
+                      >
+                        {/* Số thứ tự nhỏ */}
+                        <div className="col-span-1 text-[10px] font-bold text-gray-400 text-center">
+                          {i + 1}.
+                        </div>
+
+                        <div className="col-span-4">
+                          <input
+                            className="w-full text-sm font-bold text-gray-700 bg-white border border-gray-200 p-2 rounded-lg focus:border-blue-500 outline-none shadow-sm"
+                            value={s.label}
+                            onChange={(e) => {
+                              const ns = [...selected.specs];
+                              ns[i] = { ...ns[i], label: e.target.value };
+                              updateField("specs", ns);
+                            }}
+                            placeholder="Tên (VD: Kích thước)"
+                          />
+                        </div>
+                        <div className="col-span-6">
+                          <input
+                            className="w-full text-sm text-gray-800 bg-white border border-gray-200 p-2 rounded-lg focus:border-blue-500 outline-none shadow-sm"
+                            value={s.value}
+                            onChange={(e) => {
+                              const ns = [...selected.specs];
+                              ns[i] = { ...ns[i], value: e.target.value };
+                              updateField("specs", ns);
+                            }}
+                            placeholder="Giá trị (VD: A4, A5...)"
+                          />
+                        </div>
+
+                        {/* Nút Xóa: Luôn hiện */}
+                        <div className="col-span-1 flex justify-center">
+                          <button
+                            onClick={() => {
+                              if (confirm("Xóa dòng thông số này?")) {
+                                const ns = [...selected.specs];
+                                ns.splice(i, 1);
+                                updateField("specs", ns);
+                              }
+                            }}
+                            className="p-2 text-red-400 bg-white border border-red-100 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all shadow-sm"
+                            title="Xóa dòng này"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* --- BLOCK MỚI: CÂU HỎI THƯỜNG GẶP (FAQ) - Giao diện Accordion --- */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-lg text-[#16579e]">
+                        <HelpCircle className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-lg">
+                        Câu Hỏi Thường Gặp (FAQ)
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() =>
+                        updateField("faq", [
+                          ...(selected.faq || []),
+                          { q: "", a: "" },
+                        ])
+                      }
+                      className="bg-blue-50 text-[#16579e] px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 flex items-center gap-2 transition-colors"
+                    >
+                      + Thêm câu hỏi
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {selected.faq?.length === 0 && (
+                      <p className="text-sm text-gray-400 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                        Chưa có câu hỏi nào.
+                      </p>
+                    )}
+                    {selected.faq?.map((item: any, i: number) => (
+                      <div
+                        key={i}
+                        className="bg-gray-50 p-4 rounded-xl border border-gray-200 relative group"
+                      >
+                        {/* Nút Xóa FAQ: Luôn hiện */}
+                        <button
+                          onClick={() => {
+                            if (confirm("Xóa câu hỏi này?")) {
+                              const nf = [...selected.faq];
+                              nf.splice(i, 1);
+                              updateField("faq", nf);
+                            }
+                          }}
+                          className="absolute top-3 right-3 p-1.5 text-red-400 bg-white border border-red-100 hover:bg-red-50 hover:text-red-600 rounded-lg shadow-sm z-10"
+                          title="Xóa câu hỏi này"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        <div className="flex gap-3 mb-3 pr-10">
+                          <span className="text-sm font-black text-[#16579e] pt-2 w-6 text-center bg-white rounded h-8 leading-8 shadow-sm">
+                            Q
+                          </span>
+                          <input
+                            className="flex-1 text-sm font-bold text-gray-800 bg-white border border-gray-200 p-2 rounded-lg focus:border-blue-500 outline-none shadow-sm"
+                            value={item.q}
+                            onChange={(e) => {
+                              const nf = [...selected.faq];
+                              nf[i] = { ...nf[i], q: e.target.value };
+                              updateField("faq", nf);
+                            }}
+                            placeholder="Nhập câu hỏi..."
+                          />
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="text-sm font-black text-gray-400 pt-2 w-6 text-center bg-white rounded h-8 leading-8 shadow-sm">
+                            A
+                          </span>
+                          <textarea
+                            className="flex-1 text-sm text-gray-600 bg-white border border-gray-200 p-2 rounded-lg focus:border-blue-500 outline-none resize-none h-20 leading-relaxed shadow-sm"
+                            value={item.a}
+                            onChange={(e) => {
+                              const nf = [...selected.faq];
+                              nf[i] = { ...nf[i], a: e.target.value };
+                              updateField("faq", nf);
+                            }}
+                            placeholder="Nhập câu trả lời..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Cột phụ (1/3) */}
               <div className="space-y-8">
-                {/* Block: Hình ảnh */}
+                {/* Block: Hình ảnh (Đã xóa Gallery, chỉ còn Cover) */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-6">
                   <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
                     <div className="p-2 bg-blue-50 rounded-lg text-[#16579e]">
                       <ImageIcon className="w-5 h-5" />
                     </div>
-                    <h3 className="font-bold text-gray-800">Media</h3>
+                    <h3 className="font-bold text-gray-800">Ảnh Đại Diện</h3>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
-                      Ảnh Đại Diện (Cover)
+                      Cover Image
                     </label>
                     <div className="aspect-video bg-gray-100 rounded-xl border border-gray-200 overflow-hidden relative group mb-3 shadow-inner">
                       {selected.coverImage ? (
-                        <img
+                        <Image
+                          alt="Cover Image"
                           src={selected.coverImage}
                           className="w-full h-full object-cover"
+                          width={600}
+                          height={360}
+                          sizes="(max-width: 768px) 100vw, 500px"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-gray-800">
@@ -1548,45 +1842,6 @@ function ServicesTabContent() {
                           Thay Đổi
                         </CldUploadButton>
                       </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2 items-center">
-                      <label className="text-xs font-bold text-gray-500 uppercase">
-                        Gallery ({selected.gallery?.length})
-                      </label>
-                      <CldUploadButton
-                        uploadPreset="hoanganhthao-upload"
-                        options={{ multiple: true }}
-                        onSuccess={(r: any) =>
-                          setSelected((p: any) => ({
-                            ...p,
-                            gallery: [...(p.gallery || []), r.info.secure_url],
-                          }))
-                        }
-                        className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded border hover:bg-gray-200 font-bold"
-                      >
-                        + Thêm
-                      </CldUploadButton>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {selected.gallery?.map((img: string, i: number) => (
-                        <div
-                          key={i}
-                          className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200"
-                        >
-                          <img
-                            src={img}
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            onClick={() => removeGalleryImage(i)}
-                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>

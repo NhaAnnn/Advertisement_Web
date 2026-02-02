@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Montserrat } from "next/font/google";
+import Image from "next/image";
 
 const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
@@ -91,7 +91,6 @@ export default function Navbar() {
   return (
     <>
       <header
-        // THAY ĐỔI 1: Tăng z-index lên 100 để đè lên mọi content của trang Dịch vụ
         className={`fixed top-0 z-[100] w-full transition-all duration-500 border-b
         ${
           isScrolled || isMobileMenuOpen
@@ -103,10 +102,13 @@ export default function Navbar() {
           {/* LOGO */}
           <Link href="/" className="group flex items-center">
             <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300">
-              <img
+              <Image
                 src="/logo-blue.png"
                 alt="Logo"
                 className="w-full h-full object-contain p-1"
+                width={56}
+                height={56}
+                sizes="56px"
               />
             </div>
             <div className="flex flex-col justify-center">
@@ -150,16 +152,12 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* MOBILE TOGGLE (ĐÃ SỬA LỖI KHÓ BẤM) */}
+          {/* MOBILE TOGGLE */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            // THAY ĐỔI 2: Fix cứng w-10 h-10 để nút luôn có diện tích bấm ổn định
-            // Thêm active:scale-95 để có phản hồi khi chạm vào
             className="lg:hidden w-10 h-10 flex items-center justify-center text-[#16579e] rounded-full hover:bg-blue-50 transition-all active:scale-95 relative z-[102]"
             aria-label="Toggle Menu"
           >
-            {/* THAY ĐỔI 3: Bỏ mode="wait" để icon cũ và mới chồng lên nhau trong tích tắc,
-                tránh việc nút bị rỗng nội dung gây mất focus click */}
             <AnimatePresence>
               {isMobileMenuOpen ? (
                 <motion.div
@@ -201,10 +199,13 @@ export default function Navbar() {
               <div className="container mx-auto px-6 pb-8 pt-4">
                 {/* Background Decor */}
                 <div className="absolute -right-10 top-10 w-64 h-64 opacity-[0.03] pointer-events-none">
-                  <img
+                  <Image
                     src="/logo-blue.png"
                     className="w-full h-full object-contain animate-[spin_60s_linear_infinite]"
-                    alt=""
+                    alt="Decorative Logo"
+                    width={256}
+                    height={256}
+                    sizes="256px"
                   />
                 </div>
 
@@ -250,7 +251,6 @@ export default function Navbar() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          // THAY ĐỔI 4: Tăng z-index của backdrop để đảm bảo nó che phủ tốt
           className="fixed inset-0 z-[90] bg-black/20 backdrop-blur-[2px] lg:hidden"
           style={{ top: "70px" }}
           onClick={() => setIsMobileMenuOpen(false)}

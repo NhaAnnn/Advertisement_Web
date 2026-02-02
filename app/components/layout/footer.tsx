@@ -1,13 +1,13 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Facebook, Loader2, Send } from "lucide-react";
 
-// 1. IMPORT FONT MONTSERRAT (Để đồng bộ font chữ logo với Navbar)
+// 1. IMPORT FONT MONTSERRAT
 import { Montserrat } from "next/font/google";
-import { CONTACT_INFO } from "../data/contact_content";
+import { CONTACT_INFO } from "../../data/contact_content";
 import { usePathname } from "next/navigation";
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -64,7 +64,7 @@ export default function Footer() {
     );
 
     try {
-      // Gửi request không đồng bộ (no-cors để bypass lỗi chặn của trình duyệt)
+      // Gửi request không đồng bộ
       await fetch(GOOGLE_FORM_CONFIG.URL, {
         method: "POST",
         body: googleFormData,
@@ -88,7 +88,7 @@ export default function Footer() {
   return (
     // Sử dụng bg-[#0F265C] (Xanh Navy đậm) làm nền chủ đạo giống ảnh
     <footer className="bg-surface-dark pt-16 pb-12 border-t border-white/5 relative overflow-hidden text-white">
-      {/* Nền chữ chìm trang trí (Giữ nguyên hiệu ứng đẹp) */}
+      {/* Nền chữ chìm trang trí */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none select-none opacity-[0.02] flex items-center">
         {/* animation-duration: 30s để chạy thật chậm */}
         <div className="whitespace-nowrap animate-[marquee_30s_linear_infinite] flex gap-20">
@@ -113,10 +113,13 @@ export default function Footer() {
             <Link href="/" className="flex items-center  group">
               {/* Ảnh Logo */}
               <div className="w-16 h-16 flex items-center justify-center -ml-3">
-                <img
+                <Image
                   src="/logo-white.png"
                   alt="Logo"
                   className="w-full h-full object-contain"
+                  width={64}
+                  height={64}
+                  sizes="64px"
                 />
               </div>
               {/* Chữ Logo */}
@@ -150,7 +153,7 @@ export default function Footer() {
                 <Facebook className="w-5 h-5" />
               </a>
 
-              {/* Zalo (Tự tạo nút chữ vì Zalo không có icon trong lucide) */}
+              {/* Zalo */}
               <a
                 href="#s"
                 aria-label="Zalo Hoàng Thảo Anh"
@@ -225,7 +228,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* ================= CỘT 4: NHẬN BÁO GIÁ (NEWSLETTER) ================= */}
+          {/* ================= CỘT 4: NHẬN BÁO GIÁ ================= */}
           <div>
             <h3 className=" text-white  font-bold uppercase tracking-widest text-sm mb-6 border-b border-white/20 pb-2 inline-block">
               Nhận Báo Giá

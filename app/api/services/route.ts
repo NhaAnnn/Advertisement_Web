@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
-import { prisma } from "../../../prisma/prisma"; // Dùng bản singleton
+import { prisma } from "../../../prisma/prisma";
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth"; // Import
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Import config
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// GET: Công khai (Khách xem bài viết)
+// GET: Công khai
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get("slug");
@@ -27,9 +27,8 @@ export async function GET(req: Request) {
   }
 }
 
-// POST: BẢO MẬT (Thêm/Sửa)
+// POST: BẢO MẬT
 export async function POST(req: Request) {
-  // 🔒 CHẶN NGƯỜI LẠ
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Cút ngay hacker! 😡" }, { status: 401 });
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
       update: { ...data },
       create: { slug, ...data },
     });
-
+    revalidatePath("/services/" + slug);
     revalidatePath("/services");
     revalidatePath("/"); // Nếu có hiện ở trang chủ
     return NextResponse.json(updated);
@@ -56,7 +55,6 @@ export async function POST(req: Request) {
 
 // DELETE: BẢO MẬT (Xóa)
 export async function DELETE(req: Request) {
-  // 🔒 CHẶN NGƯỜI LẠ
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,6 +71,7 @@ export async function DELETE(req: Request) {
     await prisma.serviceContent.delete({
       where: { slug },
     });
+    revalidatePath("/services/" + slug);
     revalidatePath("/services");
     revalidatePath("/");
     return NextResponse.json({ success: true });

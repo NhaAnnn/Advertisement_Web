@@ -3,7 +3,7 @@
 export const CONTACT_INFO = {
   title: "Bắt đầu Dự án Cùng Chúng tôi",
   subtitle:
-    "Dù bạn có ý tưởng lớn hay chỉ là câu hỏi nhỏ, đội ngũ ArtPrint luôn sẵn sàng lắng nghe và đồng hành cùng bạn tạo nên những ấn phẩm độc bản.",
+    "Dù bạn có ý tưởng lớn hay chỉ là câu hỏi nhỏ, đội ngũ Hoàng Thảo Anh luôn sẵn sàng lắng nghe và đồng hành cùng bạn tạo nên những ấn phẩm độc bản.",
   address: "Lô D Chung Cư Tây Thạnh, Tân Phú, TP.HCM",
   hotline: "0909.979.376",
   workingHours: "Mon - Fri: 08:00 - 18:00",
@@ -38,7 +38,7 @@ export const FAQ_ITEMS = [
       "Có, chúng tôi hỗ trợ in mẫu test màu (proof) miễn phí cho đơn hàng số lượng lớn trước khi sản xuất hàng loạt.",
   },
   {
-    question: "ArtPrint có thiết kế không?",
+    question: "Hoàng Thảo Anh có thiết kế không?",
     answer:
       "Chúng tôi có đội ngũ thiết kế chuyên nghiệp sẵn sàng hỗ trợ bạn tạo ra những ấn phẩm độc đáo nếu bạn chưa có file in.",
   },

@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// FILE: app/services/ServicesClient.tsx
 "use client";
 
 import React, { useState, useMemo } from "react"; // ❌ Bỏ useEffect thừa
@@ -62,7 +61,7 @@ const findNodeById = (
   return null;
 };
 
-export default function ServicesClient({
+export default function ServicesPage({
   initialData = [],
 }: {
   initialData?: any[];
@@ -70,7 +69,6 @@ export default function ServicesClient({
   const typedMenuTree = MENU_TREE as CategoryNode[];
 
   // --- 1. STATE CHỈ LƯU CÁI CẦN THIẾT ---
-  // Chỉ lưu ID đang chọn, không lưu danh sách bài viết
   const [activeNodeId, setActiveNodeId] = useState<string>(typedMenuTree[0].id);
   const [expandedIds, setExpandedIds] = useState<string[]>([
     typedMenuTree[0].id,
@@ -78,8 +76,6 @@ export default function ServicesClient({
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // --- 2. TỰ ĐỘNG TÍNH TOÁN DỮ LIỆU (CORE LOGIC) ---
-  // Bất cứ khi nào activeNodeId đổi, biến này tự cập nhật ngay lập tức.
-  // Không cần useEffect, không delay, không lỗi reset.
   const { currentArticles, activeTitle } = useMemo(() => {
     // Tìm node hiện tại
     const currentNode =
@@ -97,7 +93,7 @@ export default function ServicesClient({
       currentArticles: filtered,
       activeTitle: currentNode.name,
     };
-  }, [activeNodeId, initialData]); // Chạy lại khi ID đổi hoặc Data mới về
+  }, [activeNodeId, initialData]);
 
   // --- 3. XỬ LÝ CLICK ĐƠN GIẢN ---
   const handleNodeClick = (node: CategoryNode) => {
@@ -112,7 +108,7 @@ export default function ServicesClient({
 
     // Chỉ cần set ID, useMemo ở trên sẽ tự lo phần lọc dữ liệu
     setActiveNodeId(node.id);
-    setSearchQuery(""); // Reset search khi đổi danh mục
+    setSearchQuery("");
 
     // Scroll nhẹ trên mobile
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -122,7 +118,7 @@ export default function ServicesClient({
     }
   };
 
-  // --- 4. LỌC TÌM KIẾM (SEARCH) ---
+  // --- 4. LỌC TÌM KIẾM ---
   const displayArticles = useMemo(() => {
     if (!searchQuery) return currentArticles;
     const query = searchQuery.toLowerCase();
@@ -133,7 +129,7 @@ export default function ServicesClient({
     );
   }, [currentArticles, searchQuery]);
 
-  // --- PHẦN RENDER (GIỮ NGUYÊN) ---
+  // --- PHẦN RENDER ---
   const RecursiveMenuItem = ({ node }: { node: CategoryNode }) => {
     const isExpanded = expandedIds.includes(node.id);
     const isActive = activeNodeId === node.id;
