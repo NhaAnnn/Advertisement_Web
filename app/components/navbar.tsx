@@ -99,7 +99,7 @@ export default function Navbar() {
             : "bg-transparent border-transparent"
         }`}
       >
-        <div className="max-w-[1800px] mx-auto px-6 md:px-12 py-3 flex items-center justify-between relative z-[101] bg-inherit">
+        <div className="max-w-[1800px] mx-auto px-6 md:px-12 py-3 flex items-center justify-between relative z-[101] bg-inherit -ml-3">
           {/* LOGO */}
           <Link href="/" className="group flex items-center">
             <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300">
