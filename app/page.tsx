@@ -218,7 +218,7 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                   <div className="absolute top-8 left-8 z-20">
                     <span className="inline-block px-4 py-1 border border-white/20 backdrop-blur-md bg-black/40 text-xs font-bold uppercase tracking-widest text-white rounded-full">
-                      {servicesData[0].tag || "Best Seller"}
+                      {servicesData[0].tag }
                     </span>
                   </div>
                   <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end z-10">
