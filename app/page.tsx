@@ -182,7 +182,7 @@ export default function HomePage() {
       </section>
 
       {/* =========================================
-          SECTION 2: SERVICES (DỮ LIỆU ĐỘNG)
+          SECTION 2: SERVICES (ĐÃ XỬ LÝ TEXT DÀI)
       ========================================= */}
       <section
         id="services"
@@ -203,7 +203,7 @@ export default function HomePage() {
 
           {servicesData.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Main Feature Item (Item đầu tiên) */}
+              {/* --- ITEM 1: MAIN FEATURE --- */}
               <div className="lg:col-span-5 group cursor-pointer relative h-[600px] lg:h-auto">
                 <Link
                   href={servicesData[0].link || "/services"}
@@ -222,17 +222,25 @@ export default function HomePage() {
                     </span>
                   </div>
                   <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end z-10">
-                    <h3 className="text-4xl md:text-5xl font-serif text-white mb-4 leading-tight group-hover:text-primary-light transition-colors">
+                    <h3 className="text-4xl md:text-5xl font-serif text-white mb-4 leading-tight transition-colors">
                       {servicesData[0].title}
                     </h3>
-                    <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest text-white border-b border-primary pb-1 hover:text-primary-light transition-colors w-fit">
-                      Xem chi tiết <ArrowRight className="w-5 h-5" />
+
+                    {/* 👇 ĐÃ FIX: line-clamp-3 và tăng max-h lên 48 */}
+                    <div className="max-h-0 group-hover:max-h-48 overflow-hidden transition-all duration-700 ease-out">
+                      <p className="text-white/80 text-lg mb-6 pt-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 line-clamp-3">
+                        {servicesData[0].desc}
+                      </p>
+                    </div>
+
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/20 bg-white/10 text-white group-hover:bg-primary group-hover:border-primary transition-all duration-300">
+                      <ArrowUpRight className="w-5 h-5" />
                     </div>
                   </div>
                 </Link>
               </div>
 
-              {/* Other Items */}
+              {/* --- RIGHT COLUMN --- */}
               <div className="lg:col-span-7 flex flex-col gap-8">
                 {/* Item thứ 2 */}
                 {servicesData[1] && (
@@ -249,21 +257,22 @@ export default function HomePage() {
                       ></div>
                       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent"></div>
                       <div className="absolute inset-0 p-8 md:p-10 flex flex-col justify-center z-10 items-start max-w-xl">
-                        <h3 className="text-3xl md:text-4xl font-serif text-white mb-4 group-hover:translate-x-2 transition-transform duration-300">
+                        <h3 className="text-3xl md:text-4xl font-serif text-white mb-2 group-hover:translate-x-2 transition-transform duration-300">
                           {servicesData[1].title}
                         </h3>
-                        <p className="text-white/80 text-base mb-6 leading-relaxed">
-                          {servicesData[1].desc}
-                        </p>
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-white/20 bg-white/10 text-white group-hover:bg-primary group-hover:border-primary transition-all duration-300">
-                          <ArrowUpRight className="w-5 h-5" />
+
+                        {/* 👇 ĐÃ FIX: line-clamp-3 */}
+                        <div className="max-h-0 group-hover:max-h-36 overflow-hidden transition-all duration-500 ease-in-out w-full mt-4 mb-4">
+                          <p className="text-white/80 text-base mb-4 pt-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75 line-clamp-3">
+                            {servicesData[1].desc}
+                          </p>
                         </div>
                       </div>
                     </div>
                   </Link>
                 )}
 
-                {/* Các item còn lại (Từ index 2 trở đi) */}
+                {/* Các item còn lại */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full min-h-[300px]">
                   {servicesData.slice(2).map((service: any, idx: number) => (
                     <Link
@@ -278,13 +287,18 @@ export default function HomePage() {
                         ></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                         <div className="absolute inset-0 p-8 flex flex-col justify-end z-10">
-                          <h3 className="text-2xl font-serif text-white mb-2">
+                          <h3 className="text-2xl font-serif text-white mb-1">
                             {service.title}
                           </h3>
-                          <p className="text-sm text-white/70 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0">
-                            {service.desc}
-                          </p>
-                          <span className="text-xs font-bold text-primary-light uppercase tracking-widest border-b border-primary/30 pb-1 inline-block">
+
+                          {/* 👇 ĐÃ FIX: line-clamp-2 (vì ô này nhỏ, chỉ cho hiện 2 dòng thôi) */}
+                          <div className="max-h-0 group-hover:max-h-24 overflow-hidden transition-all duration-500 ease-out">
+                            <p className="text-sm text-white/70 mb-3 pt-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-300 line-clamp-2">
+                              {service.desc}
+                            </p>
+                          </div>
+
+                          <span className="text-xs font-bold text-primary-light uppercase tracking-widest border-b border-primary/30 pb-1 inline-block mt-2">
                             Khám phá
                           </span>
                         </div>
@@ -445,8 +459,8 @@ export default function HomePage() {
       {/* =========================================
           SECTION 5: PORTFOLIO (MASONRY COLORFUL)
       ========================================= */}
-      <section id="portfolio" className="py-24 px-4 md:px-8 bg-white relative">
-        <div className="max-w-[1800px] mx-auto">
+      <section id="portfolio" className="py-24 bg-white relative">
+        <div className="max-w-[1800px] mx-auto px-6 md:px-12">
           {/* --- HEADER SECTION --- */}
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <span className="text-primary font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-4 flex items-center justify-center gap-3">
@@ -459,83 +473,84 @@ export default function HomePage() {
             </h2>
           </div>
 
-          {/* --- MASONRY GRID (Thác nước) --- */}
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-            {portfolioData.map((item: any, idx: number) => (
-              <div
-                key={idx}
-                className="break-inside-avoid relative group rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500"
-              >
-                {/* --- LOẠI 1 & 3: IMAGE / CARD (Full Color) --- */}
-                {(item.type === "image" || item.type === "card") && (
-                  <Link href="/services" className="block relative">
-                    {/* Hình ảnh (Giữ nguyên màu) */}
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                      />
+          <div className="max-w-[1600px] mx-auto">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+              {portfolioData.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="break-inside-avoid relative group rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-500"
+                >
+                  {/* --- LOẠI 1 & 3: IMAGE / CARD (Full Color) --- */}
+                  {(item.type === "image" || item.type === "card") && (
+                    <Link href="/services" className="block relative">
+                      {/* Hình ảnh (Giữ nguyên màu) */}
+                      <div className="relative overflow-hidden">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        />
 
-                      {/* Gradient đen nhẹ ở dưới để làm nổi chữ trắng */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
+                        {/* Gradient đen nhẹ ở dưới để làm nổi chữ trắng */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
 
-                      {/* Nội dung */}
-                      <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                        <span className="inline-block px-3 py-1 border border-white/30 rounded-full text-[10px] font-bold uppercase tracking-widest text-white/90 mb-3 backdrop-blur-md">
-                          {item.category}
-                        </span>
-                        <div className="flex justify-between items-end">
-                          <h3 className="text-2xl font-serif text-white leading-tight">
-                            {item.title}
-                          </h3>
-                          <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white group-hover:bg-white group-hover:text-black transition-all">
-                            <ArrowUpRight className="w-5 h-5" />
+                        {/* Nội dung */}
+                        <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                          <span className="inline-block px-3 py-1 border border-white/30 rounded-full text-[10px] font-bold uppercase tracking-widest text-white/90 mb-3 backdrop-blur-md">
+                            {item.category}
+                          </span>
+                          <div className="flex justify-between items-end">
+                            <h3 className="text-2xl font-serif text-white leading-tight">
+                              {item.title}
+                            </h3>
+                            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white group-hover:bg-white group-hover:text-black transition-all">
+                              <ArrowUpRight className="w-5 h-5" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                )}
+                    </Link>
+                  )}
 
-                {/* --- LOẠI 2: QUOTE (Phong cách tạp chí) --- */}
-                {item.type === "quote" && (
-                  <div className="bg-surface-dark p-8 flex flex-col justify-center items-center text-center min-h-[350px] relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <Quote className="w-10 h-10 text-primary mb-6" />
-                    <p className="text-xl md:text-2xl font-serif text-white leading-relaxed mb-6 relative z-10">
-                      &quot;{item.text}&quot;
-                    </p>
-                    <div className="flex flex-col items-center gap-2 relative z-10">
-                      <div className="w-12 h-[1px] bg-white/20"></div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-primary-light">
-                        {item.author}
-                      </span>
+                  {/* --- LOẠI 2: QUOTE (Phong cách tạp chí) --- */}
+                  {item.type === "quote" && (
+                    <div className="bg-surface-dark p-8 flex flex-col justify-center items-center text-center min-h-[350px] relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <Quote className="w-10 h-10 text-primary mb-6" />
+                      <p className="text-xl md:text-2xl font-serif text-white leading-relaxed mb-6 relative z-10">
+                        &quot;{item.text}&quot;
+                      </p>
+                      <div className="flex flex-col items-center gap-2 relative z-10">
+                        <div className="w-12 h-[1px] bg-white/20"></div>
+                        <span className="text-xs font-bold uppercase tracking-widest text-primary-light">
+                          {item.author}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* --- LOẠI 4: CTA (Khối màu nổi bật) --- */}
-                {item.type === "cta" && (
-                  <Link
-                    href={item.link || "/services"}
-                    className=" bg-primary text-white p-10 min-h-[300px] flex flex-col justify-center items-center text-center relative overflow-hidden group/cta hover:bg-primary-dark transition-colors"
-                  >
-                    {/* Họa tiết nền nhẹ */}
-                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                  {/* --- LOẠI 4: CTA (Khối màu nổi bật) --- */}
+                  {item.type === "cta" && (
+                    <Link
+                      href={item.link || "/services"}
+                      className=" bg-primary text-white p-10 min-h-[300px] flex flex-col justify-center items-center text-center relative overflow-hidden group/cta hover:bg-primary-dark transition-colors"
+                    >
+                      {/* Họa tiết nền nhẹ */}
+                      <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
 
-                    <div className="relative z-10 transform group-hover/cta:scale-105 transition-transform duration-500">
-                      <h4 className="text-3xl md:text-4xl font-serif mb-6 leading-tight">
-                        {item.title}
-                      </h4>
-                      <span className="inline-flex items-center gap-2 border-b-2 border-white pb-1 text-sm font-bold uppercase tracking-widest">
-                        Xem tất cả <ArrowRight className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </Link>
-                )}
-              </div>
-            ))}
+                      <div className="relative z-10 transform group-hover/cta:scale-105 transition-transform duration-500">
+                        <h4 className="text-3xl md:text-4xl font-serif mb-6 leading-tight">
+                          {item.title}
+                        </h4>
+                        <span className="inline-flex items-center gap-2 border-b-2 border-white pb-1 text-sm font-bold uppercase tracking-widest">
+                          Xem tất cả <ArrowRight className="w-4 h-4" />
+                        </span>
+                      </div>
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
