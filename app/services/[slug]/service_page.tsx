@@ -136,7 +136,10 @@ export default function ServiceClient({
                 <span className="inline-block px-3 py-1 bg-blue-50 text-primary text-[10px] font-bold uppercase tracking-widest rounded-sm mb-4 border border-blue-100">
                   {serviceDetail.category || "Dịch vụ"}
                 </span>
-                <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight mb-6 font-bold">
+                <h1
+                  className="text-3xl md:text-4xl font-serif text-foreground leading-tight mb-6 font-bold line-clamp-2"
+                  title={serviceDetail.name}
+                >
                   {serviceDetail.name}
                 </h1>
                 <div className="text-lg text-gray-600 font-light leading-relaxed border-l-4 border-primary/30 pl-6 italic bg-gray-50/50 py-4 rounded-r-lg">
