@@ -74,7 +74,7 @@ export const SHOWCASE_ITEMS = [
     sub: "Nghệ Thuật",
     desc: "In Fine Art trên giấy Cotton, Canvas. Độ bền màu 100 năm.",
     image:
-      "https://images.unsplash.com/photo-1554188248-986adbb73be0?q=80&w=1000",
+      "https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?q=80&w=1000",
     tag: "Premium",
     link: "/services",
   },
