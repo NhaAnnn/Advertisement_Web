@@ -18,21 +18,31 @@ export default function ProgressBar() {
     setIsVisible(true);
     setProgress(10);
 
-    // Simulate gradual progress
+    // Simulate gradual progress - chạy phù hợp với thời gian load thực tế
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       setProgress((prev) => {
-        if (prev < 85) {
-          return prev + Math.random() * 20;
+        if (prev < 95) {
+          // Tăng chậm, phù hợp với thời gian load:
+          // Nếu load nhanh (2s): thanh chạy ~15%, pathname change -> 100%
+          // Nếu load lâu (10s): thanh chạy ~70%, pathname change -> 100%
+          let increment = 2.5; // 2.5% mỗi 1 giây
+          if (prev >= 70) {
+            increment = 1; // Chậm hơn ở cuối
+          }
+          return prev + increment;
         }
         return prev;
       });
-    }, 400);
+    }, 1000); // Cập nhật mỗi 1 giây
   };
 
   // Detect link clicks BEFORE page loads
   useEffect(() => {
     const handleLinkClick = (e: MouseEvent) => {
+      // Tránh lặp nếu đã bắt đầu load
+      if (navigationStartedRef.current) return;
+
       const target = (e.target as any)?.closest("a");
 
       // Check if it's an internal link (not external, not javascript)
@@ -53,20 +63,21 @@ export default function ProgressBar() {
 
   // Complete progress when route actually changes (pathname updates)
   useEffect(() => {
-    if (navigationStartedRef.current && isVisible) {
-      // Page has loaded, complete the progress
+    // Chỉ hoàn thành nếu đã bắt đầu navigation
+    if (navigationStartedRef.current) {
+      // Page has loaded (pathname changed), complete the progress immediately
       if (intervalRef.current) clearInterval(intervalRef.current);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setProgress(100);
 
-      // Fade out
+      // Fade out after completion
       timeoutRef.current = setTimeout(() => {
         setIsVisible(false);
         setProgress(0);
         navigationStartedRef.current = false;
-      }, 400);
+      }, 500);
     }
-  }, [pathname, isVisible]);
+  }, [pathname]);
 
   // Cleanup
   useEffect(() => {
