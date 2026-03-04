@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Manrope, Cinzel_Decorative } from "next/font/google";
 import Navbar from "./components/layout/navbar";
 import Footer from "./components/layout/footer";
+import ProgressBar from "./components/UI/progress_bar";
 import "./globals.css";
 import ScrollFix from "./components/UI/scrollfix";
 
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${manrope.variable} ${cinzel.variable} font-sans bg-noir text-sand selection:bg-primary/30 selection:text-white antialiased`}
       >
+        <ProgressBar />
         <ScrollFix />
         <Navbar />
 

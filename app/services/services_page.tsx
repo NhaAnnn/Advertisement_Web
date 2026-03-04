@@ -1,8 +1,7 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useMemo } from "react"; // ❌ Bỏ useEffect thừa
+import React, { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -93,10 +92,11 @@ export default function ServicesPage({
       currentArticles: filtered,
       activeTitle: currentNode.name,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeNodeId, initialData]);
 
-  // --- 3. XỬ LÝ CLICK ĐƠN GIẢN ---
-  const handleNodeClick = (node: CategoryNode) => {
+  // --- 3. XỬ LÝ CLICK ĐƠN GIẢN (MEMOIZED) ---
+  const handleNodeClick = useCallback((node: CategoryNode) => {
     // Logic Accordion (Đóng/Mở menu)
     if (node.children) {
       setExpandedIds((prev) =>
@@ -116,7 +116,7 @@ export default function ServicesPage({
         .getElementById("content-area")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  };
+  }, []);
 
   // --- 4. LỌC TÌM KIẾM ---
   const displayArticles = useMemo(() => {
@@ -134,7 +134,7 @@ export default function ServicesPage({
     const isExpanded = expandedIds.includes(node.id);
     const isActive = activeNodeId === node.id;
 
-    let itemClass = `flex justify-between cursor-pointer py-3 px-5 hover:text-primary transition-colors ${isActive ? "text-primary font-bold" : ""}`;
+    let itemClass = `flex justify-between cursor-pointer py-3 px-5 hover:text-primary active:scale-95 transition-all ${isActive ? "text-primary font-bold" : ""}`;
     if (node.level === 1)
       itemClass +=
         " font-black border-b bg-surface/40 uppercase tracking-wider text-sm";
@@ -143,7 +143,7 @@ export default function ServicesPage({
       itemClass +=
         " pl-14 text-xs font-medium text-muted border-l-2 border-transparent ml-5 hover:border-primary";
     if (isActive && node.level === 3)
-      itemClass += " !border-primary bg-primary/5";
+      itemClass += " !border-primary bg-primary/5 scale-100";
 
     return (
       <div className="w-full select-none">
@@ -234,7 +234,7 @@ export default function ServicesPage({
               </h4>
               <Link
                 href="/contact"
-                className="block w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all relative z-10 mt-4 shadow-lg text-center"
+                className="block w-full py-3 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-primary hover:text-white active:scale-95 transition-all relative z-10 mt-4 shadow-lg text-center"
               >
                 Gửi Yêu Cầu
               </Link>
@@ -271,7 +271,7 @@ export default function ServicesPage({
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-primary"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-primary active:scale-75 transition-transform"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -296,7 +296,7 @@ export default function ServicesPage({
                       >
                         <Link
                           href={`/services/${article.slug || "#"}`}
-                          className="group relative bg-background border border-border rounded-sm overflow-hidden hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col md:flex-row h-full"
+                          className="group relative bg-background border border-border rounded-sm overflow-hidden hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 active:scale-98 transition-all duration-300 flex flex-col md:flex-row h-full"
                         >
                           <div className="md:w-2/5 relative overflow-hidden aspect-video md:aspect-auto bg-gray-100">
                             {article.coverImage ? (
@@ -367,7 +367,7 @@ export default function ServicesPage({
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery("")}
-                        className="mt-4 text-primary text-xs font-bold uppercase hover:underline"
+                        className="mt-4 text-primary text-xs font-bold uppercase hover:underline active:scale-90 transition-transform"
                       >
                         Xóa tìm kiếm
                       </button>

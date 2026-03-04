@@ -1,8 +1,7 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -54,15 +53,17 @@ export default function HomePage({ initialData }: HomePageProps) {
   // --- LOGIC VÒNG LẶP SHOWCASE ---
   const loopItems = [...showcaseData, ...showcaseData];
 
-  // --- AUTO SCROLL ---
+  // Memoized callbacks để tránh re-render không cần thiết
+  const handleScrollPause = useCallback(() => setIsPaused(true), []);
+  const handleScrollResume = useCallback(() => setIsPaused(false), []);
+
+  // --- AUTO SCROLL (OPTIMIZED) ---
   useEffect(() => {
     let animationFrameId: number;
     const autoScroll = () => {
-      if (scrollContainerRef.current) {
+      if (scrollContainerRef.current && !isPaused) {
         const container = scrollContainerRef.current;
-        if (!isPaused) {
-          container.scrollLeft += 1;
-        }
+        container.scrollLeft += 1;
         if (container.scrollLeft >= container.scrollWidth / 2) {
           container.scrollLeft = 0;
         }
@@ -71,7 +72,7 @@ export default function HomePage({ initialData }: HomePageProps) {
     };
     animationFrameId = requestAnimationFrame(autoScroll);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isPaused, loopItems]);
+  }, [isPaused]);
 
   return (
     <main className="relative overflow-x-hidden min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
@@ -121,7 +122,7 @@ export default function HomePage({ initialData }: HomePageProps) {
               <Link
                 href="#services"
                 aria-label="Cuộn xuống phần dịch vụ"
-                className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-xl shadow-primary/20 hover:scale-110 transition-all duration-500 group relative overflow-hidden shrink-0"
+                className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-xl shadow-primary/20 hover:scale-110 active:scale-95 transition-all duration-300 group relative overflow-hidden shrink-0"
               >
                 <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></span>
                 <ArrowDown className="w-8 h-8 group-hover:translate-y-1 transition-transform duration-300" />
@@ -133,7 +134,7 @@ export default function HomePage({ initialData }: HomePageProps) {
           <div className="lg:col-span-5 relative mt-16 lg:mt-0 h-[50vh] lg:h-[75vh] w-full flex items-center justify-center lg:justify-end perspective-1000">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] border border-border rounded-full animate-spin-slow border-dashed opacity-50"></div>
 
-            <div className="relative w-4/5 h-full z-10 overflow-hidden rounded-sm transition-all duration-700 ease-out shadow-2xl shadow-primary/10 border border-white group hover:-translate-y-2">
+            <div className="relative w-4/5 h-full z-10 overflow-hidden rounded-sm transition-all duration-700 ease-out shadow-2xl shadow-primary/10 border border-white group hover:-translate-y-2 active:scale-98">
               <div
                 className="absolute inset-0 bg-cover bg-center scale-105 group-hover:scale-110 transition-transform duration-[1.5s]"
                 style={{ backgroundImage: `url('${heroData.mainImage}')` }}
@@ -187,7 +188,7 @@ export default function HomePage({ initialData }: HomePageProps) {
               <div className="lg:col-span-5 group cursor-pointer relative h-[600px] lg:h-auto">
                 <Link
                   href={servicesData[0].link || "/services"}
-                  className="block w-full h-full relative overflow-hidden rounded-sm bg-background border border-border transition-all duration-500 hover:border-primary hover:shadow-xl hover:shadow-primary/10"
+                  className="block w-full h-full relative overflow-hidden rounded-sm bg-background border border-border transition-all duration-500 hover:border-primary hover:shadow-xl hover:shadow-primary/10 active:scale-98"
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center opacity-95 group-hover:opacity-100 transition-opacity duration-700 scale-100 group-hover:scale-110"
@@ -225,7 +226,7 @@ export default function HomePage({ initialData }: HomePageProps) {
                 {servicesData[1] && (
                   <Link
                     href={servicesData[1].link || "/services"}
-                    className="group cursor-pointer relative h-[350px]"
+                    className="group cursor-pointer relative h-[350px] active:scale-98 transition-transform"
                   >
                     <div className="w-full h-full relative overflow-hidden rounded-sm bg-background border border-border transition-all duration-500 hover:border-primary hover:shadow-lg">
                       <div
@@ -262,7 +263,7 @@ export default function HomePage({ initialData }: HomePageProps) {
                     <Link
                       href={service.link || "/services"}
                       key={idx}
-                      className="group cursor-pointer relative h-full"
+                      className="group cursor-pointer relative h-full active:scale-95 transition-transform"
                     >
                       <div className="w-full h-full relative overflow-hidden rounded-sm bg-background border border-border transition-all duration-500 hover:border-primary hover:shadow-lg">
                         <div
@@ -328,15 +329,15 @@ export default function HomePage({ initialData }: HomePageProps) {
           <div className="relative w-full">
             <div
               ref={scrollContainerRef}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
+              onMouseEnter={handleScrollPause}
+              onMouseLeave={handleScrollResume}
               className="flex overflow-x-auto gap-8 pb-12 -mx-6 px-6 md:px-0 md:mx-0 scrollbar-hide select-none"
             >
               {loopItems.map((item: any, idx: number) => (
                 <Link
                   href={item.link || "/services"}
                   key={idx}
-                  className="shrink-0 w-[85vw] sm:w-[400px] lg:w-[450px] h-[600px] relative group rounded-sm overflow-hidden border border-white/10 hover:border-primary/50 transition-all duration-500 shadow-2xl"
+                  className="shrink-0 w-[85vw] sm:w-[400px] lg:w-[450px] h-[600px] relative group rounded-sm overflow-hidden border border-white/10 hover:border-primary/50 transition-all duration-500 shadow-2xl active:scale-95"
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] group-hover:scale-110"
@@ -390,7 +391,7 @@ export default function HomePage({ initialData }: HomePageProps) {
               </p>
               <Link
                 href="/contact"
-                className="group inline-flex items-center gap-4 text-sm uppercase tracking-widest font-bold px-8 py-4 bg-foreground text-background hover:bg-primary hover:text-white transition-all rounded-sm shadow-xl"
+                className="group inline-flex items-center gap-4 text-sm uppercase tracking-widest font-bold px-8 py-4 bg-foreground text-background hover:bg-primary hover:text-white active:scale-95 transition-all rounded-sm shadow-xl"
               >
                 Bắt đầu dự án
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -464,9 +465,12 @@ export default function HomePage({ initialData }: HomePageProps) {
                 >
                   {/* --- LOẠI 1 & 3: IMAGE / CARD (Full Color) --- */}
                   {(item.type === "image" || item.type === "card") && (
-                    <Link href="/services" className="block relative">
+                    <Link
+                      href="/services"
+                      className="block relative active:scale-95 transition-transform"
+                    >
                       {/* Hình ảnh (Giữ nguyên màu) */}
-                      <div className="relative overflow-hidden w-full bg-gray-200">
+                      <div className="relative overflow-hidden w-full bg-gray-200 hover:shadow-lg transition-shadow">
                         <Image
                           src={item.image}
                           alt={item.title}
@@ -501,12 +505,12 @@ export default function HomePage({ initialData }: HomePageProps) {
                   {/* --- LOẠI 2: QUOTE (Phong cách tạp chí) --- */}
                   {item.type === "quote" && (
                     <div className="bg-surface-dark p-8 flex flex-col justify-center items-center text-center min-h-[350px] relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 group-active:opacity-0"></div>
                       <Quote className="w-10 h-10 text-primary mb-6" />
                       <p className="text-xl md:text-2xl font-serif text-white leading-relaxed mb-6 relative z-10">
                         &quot;{item.text}&quot;
                       </p>
-                      <div className="flex flex-col items-center gap-2 relative z-10">
+                      <div className="flex flex-col items-center gap-2 relative z-10 group-active:scale-95 transition-transform">
                         <div className="w-12 h-[1px] bg-white/20"></div>
                         <span className="text-xs font-bold uppercase tracking-widest text-primary-light">
                           {item.author}
@@ -519,7 +523,7 @@ export default function HomePage({ initialData }: HomePageProps) {
                   {item.type === "cta" && (
                     <Link
                       href={item.link || "/services"}
-                      className=" bg-primary text-white p-10 min-h-[300px] flex flex-col justify-center items-center text-center relative overflow-hidden group/cta hover:bg-primary-dark transition-colors"
+                      className="bg-primary text-white p-10 min-h-[300px] flex flex-col justify-center items-center text-center relative overflow-hidden group/cta hover:bg-primary-dark active:scale-95 transition-all duration-300"
                     >
                       {/* Họa tiết nền nhẹ */}
                       <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
@@ -556,7 +560,7 @@ export default function HomePage({ initialData }: HomePageProps) {
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <Link
               href="/contact"
-              className="h-16 px-12 flex items-center justify-center bg-foreground text-background font-black text-sm uppercase tracking-[0.15em] hover:bg-primary hover:text-white transition-all duration-300 rounded-sm shadow-xl"
+              className="h-16 px-12 flex items-center justify-center bg-foreground text-background font-black text-sm uppercase tracking-[0.15em] hover:bg-primary hover:text-white active:scale-95 transition-all duration-300 rounded-sm shadow-xl"
             >
               Liên hệ tư vấn
             </Link>

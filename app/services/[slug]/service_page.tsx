@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -56,6 +56,38 @@ export default function ServiceClient({
     };
   }, [selectedImage]);
 
+  // Memoized handlers để tránh re-render không cần thiết
+  const handleNextImage = useCallback(() => {
+    setSelectedImageIndex((prevIdx) => {
+      if (prevIdx < gallery.length - 1) {
+        const nextIdx = prevIdx + 1;
+        setSelectedImage(gallery[nextIdx]);
+        return nextIdx;
+      }
+      return prevIdx;
+    });
+  }, [gallery]);
+
+  const handlePrevImage = useCallback(() => {
+    setSelectedImageIndex((prevIdx) => {
+      if (prevIdx > 0) {
+        const newIdx = prevIdx - 1;
+        setSelectedImage(gallery[newIdx]);
+        return newIdx;
+      }
+      return prevIdx;
+    });
+  }, [gallery]);
+
+  const openImageFromGallery = useCallback((img: string, idx: number) => {
+    setSelectedImage(img);
+    setSelectedImageIndex(idx);
+  }, []);
+
+  const closeImage = useCallback(() => {
+    setSelectedImage(null);
+  }, []);
+
   // Keyboard navigation (Arrow keys)
   useEffect(() => {
     if (!selectedImage) return;
@@ -66,37 +98,20 @@ export default function ServiceClient({
       } else if (e.key === "ArrowLeft") {
         handlePrevImage();
       } else if (e.key === "Escape") {
-        setSelectedImage(null);
+        closeImage();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImage, selectedImageIndex, gallery]);
-
-  // Hàm mở ảnh từ gallery với index
-  const openImageFromGallery = (img: string, idx: number) => {
-    setSelectedImage(img);
-    setSelectedImageIndex(idx);
-  };
-
-  // Hàm xem ảnh tiếp theo
-  const handleNextImage = () => {
-    if (selectedImageIndex < gallery.length - 1) {
-      const nextIdx = selectedImageIndex + 1;
-      setSelectedImage(gallery[nextIdx]);
-      setSelectedImageIndex(nextIdx);
-    }
-  };
-
-  // Hàm xem ảnh trước đó
-  const handlePrevImage = () => {
-    if (selectedImageIndex > 0) {
-      const prevIdx = selectedImageIndex - 1;
-      setSelectedImage(gallery[prevIdx]);
-      setSelectedImageIndex(prevIdx);
-    }
-  };
+  }, [
+    selectedImage,
+    selectedImageIndex,
+    gallery,
+    handleNextImage,
+    handlePrevImage,
+    closeImage,
+  ]);
 
   return (
     <>
@@ -149,7 +164,7 @@ export default function ServiceClient({
 
               {/* ẢNH COVER */}
               <div
-                className="aspect-video w-full overflow-hidden rounded-xl mb-12 shadow-lg border border-gray-100 group cursor-pointer bg-gray-200"
+                className="aspect-video w-full overflow-hidden rounded-xl mb-12 shadow-lg border border-gray-100 group cursor-pointer bg-gray-200 hover:shadow-xl transition-shadow active:scale-98"
                 onClick={() => setSelectedImage(serviceDetail.coverImage)}
               >
                 <Image
@@ -187,7 +202,7 @@ export default function ServiceClient({
 
                     {section.image && (
                       <div
-                        className="rounded-xl overflow-hidden my-6 shadow-md border border-gray-100 aspect-video relative group cursor-pointer bg-gray-200"
+                        className="rounded-xl overflow-hidden my-6 shadow-md border border-gray-100 aspect-video relative group cursor-pointer bg-gray-200 hover:shadow-lg transition-shadow active:scale-98"
                         onClick={() => setSelectedImage(section.image)}
                       >
                         <Image
@@ -255,7 +270,7 @@ export default function ServiceClient({
                       <div
                         key={idx}
                         onClick={() => openImageFromGallery(img, idx)}
-                        className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200 cursor-zoom-in shadow-sm hover:shadow-md transition-all"
+                        className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200 cursor-zoom-in shadow-sm hover:shadow-md transition-all active:scale-95"
                       >
                         <Image
                           src={img}
@@ -339,7 +354,7 @@ export default function ServiceClient({
                   <div className="space-y-3 relative z-10">
                     <a
                       href="tel:0909979376"
-                      className="w-full py-3 bg-white text-black font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg"
+                      className="w-full py-3 bg-white text-black font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary hover:text-white active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg"
                     >
                       <Phone className="w-4 h-4" /> 0909 979 376
                     </a>
@@ -347,7 +362,7 @@ export default function ServiceClient({
                       href="https://zalo.me/0909979376"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3 bg-primary text-white font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary-dark transition-all flex items-center justify-center gap-2 shadow-lg"
+                      className="w-full py-3 bg-primary text-white font-bold uppercase text-xs tracking-widest rounded-sm hover:bg-primary-dark active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg"
                     >
                       <MessageCircle className="w-4 h-4" /> Chat Zalo
                     </a>
@@ -364,7 +379,7 @@ export default function ServiceClient({
                       <Link
                         href={`/services/${item.slug}`}
                         key={idx}
-                        className="flex gap-4 group"
+                        className="flex gap-4 group active:scale-95 transition-transform"
                       >
                         <div className="w-16 h-16 shrink-0 overflow-hidden rounded-sm bg-gray-200">
                           <Image
@@ -398,12 +413,12 @@ export default function ServiceClient({
       {selectedImage && (
         <div
           className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-300"
-          onClick={() => setSelectedImage(null)}
+          onClick={closeImage}
         >
           {/* Nút đóng */}
           <button
-            className="absolute top-5 right-5 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all z-20"
-            onClick={() => setSelectedImage(null)}
+            className="absolute top-5 right-5 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all z-20 active:scale-90"
+            onClick={closeImage}
             aria-label="Đóng ảnh"
           >
             <X className="w-8 h-8" />
@@ -412,7 +427,7 @@ export default function ServiceClient({
           {/* Nút Previous  */}
           {selectedImageIndex > 0 && (
             <button
-              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all z-20 group"
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all z-20 group active:scale-90"
               onClick={(e) => {
                 e.stopPropagation();
                 handlePrevImage();
@@ -426,7 +441,7 @@ export default function ServiceClient({
           {/* Nút Next  */}
           {selectedImageIndex < gallery.length - 1 && (
             <button
-              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all z-20 group"
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all z-20 group active:scale-90"
               onClick={(e) => {
                 e.stopPropagation();
                 handleNextImage();

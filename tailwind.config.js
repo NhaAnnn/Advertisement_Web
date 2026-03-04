@@ -46,6 +46,10 @@ module.exports = {
         sans: ["var(--font-sans)", "sans-serif"],
         display: ["var(--font-display)", "cursive"],
       },
+      scale: {
+        95: "0.95",
+        98: "0.98",
+      },
       backgroundImage: {
         noise: "url('data:image/svg+xml,...')", // (Giữ nguyên SVG cũ của bạn)
         // Gradient Xanh -> Vàng Gold (Sang trọng)
