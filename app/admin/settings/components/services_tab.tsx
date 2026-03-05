@@ -157,6 +157,9 @@ export function ServicesTabContent() {
 
     const found = list.find((item) => item.id === id);
     if (found) {
+      // Reset chế độ tạo mới khi chuyển sang bài cũ
+      setIsCreating(false);
+
       // Kiểm tra xem có draft trước đó không
       try {
         const draftKey = `draft_service_${id}`;
