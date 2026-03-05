@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { CldUploadButton } from "next-cloudinary";
 import { useRouter } from "next/navigation";
+import { useDraft } from "@/app/admin/hooks/useDraft";
+import { CloudinaryBrowser } from "./cloudinary_browser";
 
 import {
   Save,
@@ -12,6 +14,7 @@ import {
   Layers,
   Monitor,
   MapPin,
+  Search,
 } from "lucide-react";
 
 import Image from "next/image";
@@ -71,52 +74,115 @@ export function HomeTabContent() {
   const [homeConfig, setHomeConfig] = useState<any>(DEFAULT_CONFIG);
 
   const [isChanged, setIsChanged] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [deletingImages, setDeletingImages] = useState<Set<string>>(new Set());
+  const [mediaLibraryCallback, setMediaLibraryCallback] = useState<
+    ((url: string) => void) | null
+  >(null);
+  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
+  const [browserCallback, setBrowserCallback] = useState<
+    ((url: string) => void) | null
+  >(null);
 
   // REFS ĐỂ SCROLL
   const showcaseListRef = useRef<HTMLDivElement>(null);
   const processListRef = useRef<HTMLDivElement>(null);
   const portfolioListRef = useRef<HTMLDivElement>(null);
 
+  // Draft management
+  const { clearDraft } = useDraft(
+    "home_config",
+    homeConfig,
+    setHomeConfig,
+    isChanged,
+  );
+
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [heroRes, servicesRes, showcaseRes, processRes, portfolioRes] =
-          await Promise.all([
-            fetch("/api/config?key=home_hero&t=" + Date.now()).then((r) =>
-              r.json(),
-            ),
-            fetch("/api/config?key=home_services&t=" + Date.now()).then((r) =>
-              r.json(),
-            ),
-            fetch("/api/config?key=home_showcase&t=" + Date.now()).then((r) =>
-              r.json(),
-            ),
-            fetch("/api/config?key=home_process&t=" + Date.now()).then((r) =>
-              r.json(),
-            ),
-            fetch("/api/config?key=home_portfolio&t=" + Date.now()).then((r) =>
-              r.json(),
-            ),
-          ]);
+        // Kiểm tra draft trước - nếu có draft, skip fetch
+        try {
+          const savedDraft = localStorage.getItem("draft_home_config");
+          if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+            console.log("✅ Restored draft for home_config from localStorage");
+            setHomeConfig(parsedDraft);
+            setIsChanged(true);
+            setHasDraft(true);
+            setLoading(false);
+            return; // Skip API call nếu có draft
+          }
+        } catch (error) {
+          console.error("Failed to restore draft:", error);
+        }
 
-        setHomeConfig({
-          hero: { ...DEFAULT_CONFIG.hero, ...(heroRes || {}) },
+        // 1 request duy nhất - lấy tất cả keys cùng lúc
+        const keysToFetch = [
+          "home_hero",
+          "home_services",
+          "home_showcase",
+          "home_process",
+          "home_portfolio",
+        ];
+
+        const response = await fetch(
+          `/api/config?keys=${keysToFetch.join(",")}`,
+          {
+            headers: {
+              "Cache-Control": "public, max-age=3600", // Cache 1 giờ
+            },
+          },
+        );
+        const data = await response.json();
+
+        const newConfig = {
+          hero: { ...DEFAULT_CONFIG.hero, ...(data.home_hero || {}) },
           services:
-            Array.isArray(servicesRes) && servicesRes.length > 0
-              ? servicesRes
+            Array.isArray(data.home_services) && data.home_services.length > 0
+              ? data.home_services
               : DEFAULT_CONFIG.services,
-          showcase: Array.isArray(showcaseRes) ? showcaseRes : [],
-          process: Array.isArray(processRes) ? processRes : [],
-          portfolio: Array.isArray(portfolioRes) ? portfolioRes : [],
-        });
+          showcase: Array.isArray(data.home_showcase) ? data.home_showcase : [],
+          process: Array.isArray(data.home_process) ? data.home_process : [],
+          portfolio: Array.isArray(data.home_portfolio)
+            ? data.home_portfolio
+            : [],
+        };
+
+        setHomeConfig(newConfig);
       } catch (error) {
         console.error("Lỗi tải dữ liệu Home:", error);
+        // Fallback to DEFAULT_CONFIG
+        setHomeConfig(DEFAULT_CONFIG);
       } finally {
         setLoading(false);
       }
     };
     fetchHomeData();
   }, []);
+
+  // Load Cloudinary Media Library Widget
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://media-library.cloudinary.com/global/all.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Hàm mở Cloudinary Browser (không cần login)
+  const openCloudinaryBrowser = (callback: (url: string) => void) => {
+    setBrowserCallback(() => callback);
+    setIsBrowserOpen(true);
+  };
+
+  const handleBrowserSelect = (url: string) => {
+    if (browserCallback) {
+      browserCallback(url);
+    }
+  };
 
   const saveHomeConfig = async () => {
     setSaving(true);
@@ -155,13 +221,58 @@ export function HomeTabContent() {
           }),
         }),
       ]);
-      alert("✨ Đã lưu giao diện Trang Chủ!");
+      alert("✨ Giao diện Trang Chủ đã lưu thành công!");
+      clearDraft(); // Xóa draft sau khi save thành công
       setIsChanged(false);
+      setHasDraft(false);
       router.refresh();
     } catch (e) {
-      alert("❌ Lỗi khi lưu!");
+      alert("❌ Lỗi khi lưu dữ liệu!");
+      console.error(e);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Reload dữ liệu gốc từ database
+  const reloadHomeData = async () => {
+    try {
+      const keysToFetch = [
+        "home_hero",
+        "home_services",
+        "home_showcase",
+        "home_process",
+        "home_portfolio",
+      ];
+
+      const response = await fetch(
+        `/api/config?keys=${keysToFetch.join(",")}`,
+        {
+          headers: {
+            "Cache-Control": "no-cache", // Skip cache khi reload
+          },
+        },
+      );
+      const data = await response.json();
+
+      const newConfig = {
+        hero: { ...DEFAULT_CONFIG.hero, ...(data.home_hero || {}) },
+        services:
+          Array.isArray(data.home_services) && data.home_services.length > 0
+            ? data.home_services
+            : DEFAULT_CONFIG.services,
+        showcase: Array.isArray(data.home_showcase) ? data.home_showcase : [],
+        process: Array.isArray(data.home_process) ? data.home_process : [],
+        portfolio: Array.isArray(data.home_portfolio)
+          ? data.home_portfolio
+          : [],
+      };
+
+      setHomeConfig(newConfig);
+      console.log("✅ Reloaded home data from database");
+    } catch (error) {
+      console.error("Lỗi reload dữ liệu Home:", error);
+      alert("❌ Lỗi khi tải lại dữ liệu");
     }
   };
 
@@ -220,6 +331,77 @@ export function HomeTabContent() {
     setIsChanged(true);
   };
 
+  // Helper: Extract Cloudinary publicId từ URL
+  // const extractPublicIdFromUrl = (url: string): string => {
+  //   try {
+  //     // Cloudinary URL format: https://res.cloudinary.com/cloud_name/image/upload/v123/public_id.ext
+  //     const match = url.match(
+  //       /\/upload\/(?:v\d+\/)?([^/?]+)(?:\.[^/?]+)?(?:\?|$)/,
+  //     );
+  //     const publicId = match ? match[1] : "";
+  //     console.log("🔍 Extracted publicId:", publicId, "from URL:", url);
+  //     return publicId;
+  //   } catch (e) {
+  //     console.error("Error extracting publicId:", e);
+  //     return "";
+  //   }
+  // };
+
+  // Delete image từ Cloudinary khi user confirm
+  // const deleteImageFromCloudinary = async (imageUrl: string) => {
+  //   const publicId = extractPublicIdFromUrl(imageUrl);
+  //   if (!publicId) {
+  //     console.error("❌ Could not extract publicId from URL:", imageUrl);
+  //     alert("❌ Lỗi: Không thể trích xuất ID ảnh từ URL");
+  //     return false;
+  //   }
+
+  //   setDeletingImages((prev) => new Set([...prev, imageUrl]));
+
+  //   try {
+  //     console.log("🗑️ Deleting image with publicId:", publicId);
+  //     const res = await fetch("/api/delete-image", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ publicId }),
+  //     });
+
+  //     const data = await res.json();
+  //     console.log("📡 Delete response:", data);
+
+  //     if (!res.ok) {
+  //       console.error(
+  //         "❌ API returned error:",
+  //         res.status,
+  //         data.error || data.details,
+  //       );
+  //       alert(`❌ Lỗi: ${data.error || data.details || "Không thể xóa ảnh"}`);
+  //       return false;
+  //     }
+
+  //     if (data.success) {
+  //       console.log("✅ Image deleted from Cloudinary:", publicId);
+  //       return true;
+  //     } else {
+  //       console.error("❌ Failed to delete image:", data);
+  //       alert(`❌ Lỗi: ${data.error || "Không thể xóa ảnh từ server"}`);
+  //       return false;
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Error deleting image:", error);
+  //     alert(
+  //       `❌ Lỗi kết nối: ${error instanceof Error ? error.message : String(error)}`,
+  //     );
+  //     return false;
+  //   } finally {
+  //     setDeletingImages((prev) => {
+  //       const newSet = new Set(prev);
+  //       newSet.delete(imageUrl);
+  //       return newSet;
+  //     });
+  //   }
+  // };
+
   if (loading)
     return (
       <div className="h-96 flex items-center justify-center flex-col gap-4">
@@ -250,9 +432,15 @@ export function HomeTabContent() {
               <Monitor className="w-6 h-6 text-[#16579e]" /> Chỉnh sửa Trang Chủ
             </h2>
 
-            {isChanged && (
+            {isChanged && !saving && (
               <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
                 ⚠️ Chưa lưu
+              </span>
+            )}
+            {saving && (
+              <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded animate-pulse flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Đang lưu...
               </span>
             )}
           </div>
@@ -260,22 +448,45 @@ export function HomeTabContent() {
             Thay đổi nội dung hiển thị cho khách hàng.
           </p>
         </div>
-        <button
-          onClick={saveHomeConfig}
-          disabled={saving || !isChanged} // Mờ đi nếu chưa sửa gì
-          className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center disabled:opacity-70 ${
-            isChanged
-              ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg animate-pulse"
-              : "bg-[#16579e] text-white hover:bg-blue-800"
-          }`}
-        >
-          {saving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Save className="w-5 h-5" />
+        <div className="flex gap-3">
+          {isChanged && (
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    "Hủy tất cả thay đổi? Dữ liệu sẽ được trả lại như ban đầu.",
+                  )
+                ) {
+                  clearDraft();
+                  setIsChanged(false);
+                  setHasDraft(false);
+                  reloadHomeData(); // Reload từ database
+                }
+              }}
+              className="px-4 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300 whitespace-nowrap"
+              title="Hủy thay đổi chưa lưu"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Hủy Thay Đổi</span>
+            </button>
           )}
-          {isChanged ? "LƯU THAY ĐỔI" : "Đã Lưu"}
-        </button>
+          <button
+            onClick={saveHomeConfig}
+            disabled={saving || !isChanged}
+            className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap ${
+              isChanged
+                ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg"
+                : "bg-[#16579e] text-white hover:bg-blue-800"
+            } ${saving ? "animate-pulse" : ""}`}
+          >
+            {saving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            {saving ? "ĐANG LƯU..." : isChanged ? "LƯU THAY ĐỔI" : "Đã Lưu"}
+          </button>
+        </div>
       </div>
 
       {/* --- 1. HERO BANNER --- */}
@@ -357,12 +568,12 @@ export function HomeTabContent() {
               <span className="text-xs font-bold text-gray-500 uppercase mb-2 block">
                 1. Ảnh Nền
               </span>
-              <div className="aspect-video w-full bg-gray-300 rounded-lg mb-3 overflow-hidden relative shadow-inner">
+              <div className="aspect-video w-full bg-gray-300 rounded-lg mb-3 overflow-hidden relative shadow-inner group/img">
                 {homeConfig.hero.mainImage ? (
                   <Image
                     src={homeConfig.hero.mainImage}
                     alt="Ảnh Nền"
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${deletingImages.has(homeConfig.hero.mainImage) ? "opacity-50" : ""}`}
                     fill
                   />
                 ) : (
@@ -370,30 +581,64 @@ export function HomeTabContent() {
                     Chưa có ảnh
                   </div>
                 )}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  {homeConfig.hero.mainImage && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Xóa ảnh?")) {
+                          updateHero({
+                            ...homeConfig.hero,
+                            mainImage: "",
+                          });
+                        }
+                      }}
+                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                      title="Xóa ảnh"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Xóa
+                    </button>
+                  )}
+                  <CldUploadButton
+                    uploadPreset="hoanganhthao-upload"
+                    onSuccess={(r: any) =>
+                      updateHero({
+                        ...homeConfig.hero,
+                        mainImage: r.info.secure_url,
+                      })
+                    }
+                    className="text-xs bg-white hover:bg-gray-100 px-3 py-1.5 rounded-lg font-bold shadow-sm"
+                  >
+                    {homeConfig.hero.mainImage ? "Thay Đổi" : "Tải Lên"}
+                  </CldUploadButton>
+                  <button
+                    onClick={() =>
+                      openCloudinaryBrowser((url: string) =>
+                        updateHero({
+                          ...homeConfig.hero,
+                          mainImage: url,
+                        }),
+                      )
+                    }
+                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                    title="Browse ảnh từ Cloudinary"
+                  >
+                    <Search className="w-3 h-3" />
+                    Browse
+                  </button>
+                </div>
               </div>
-              <CldUploadButton
-                uploadPreset="hoanganhthao-upload"
-                onSuccess={(r: any) =>
-                  updateHero({
-                    ...homeConfig.hero,
-                    mainImage: r.info.secure_url,
-                  })
-                }
-                className="w-full bg-white border border-gray-300 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 shadow-sm"
-              >
-                📸 Chọn Ảnh Nền
-              </CldUploadButton>
             </div>
             <div className="bg-gray-100 rounded-xl p-4 border border-gray-200 text-center">
               <span className="text-xs font-bold text-gray-500 uppercase mb-2 block">
                 2. Ảnh Nổi (3D)
               </span>
-              <div className="aspect-video w-full bg-gray-300 rounded-lg mb-3 overflow-hidden relative shadow-inner">
+              <div className="aspect-video w-full bg-gray-300 rounded-lg mb-3 overflow-hidden relative shadow-inner group/img">
                 {homeConfig.hero.floatingImage ? (
                   <Image
                     src={homeConfig.hero.floatingImage}
                     alt="Ảnh Nổi (3D)"
-                    className="w-full h-full object-contain p-2"
+                    className={`w-full h-full object-contain p-2 ${deletingImages.has(homeConfig.hero.floatingImage) ? "opacity-50" : ""}`}
                     fill
                   />
                 ) : (
@@ -401,19 +646,53 @@ export function HomeTabContent() {
                     Chưa có ảnh
                   </div>
                 )}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  {homeConfig.hero.floatingImage && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Xóa ảnh?")) {
+                          updateHero({
+                            ...homeConfig.hero,
+                            floatingImage: "",
+                          });
+                        }
+                      }}
+                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                      title="Xóa ảnh"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Xóa
+                    </button>
+                  )}
+                  <CldUploadButton
+                    uploadPreset="hoanganhthao-upload"
+                    onSuccess={(r: any) =>
+                      updateHero({
+                        ...homeConfig.hero,
+                        floatingImage: r.info.secure_url,
+                      })
+                    }
+                    className="text-xs bg-white hover:bg-gray-100 px-3 py-1.5 rounded-lg font-bold shadow-sm"
+                  >
+                    {homeConfig.hero.floatingImage ? "Thay Đổi" : "Tải Lên"}
+                  </CldUploadButton>
+                  <button
+                    onClick={() =>
+                      openCloudinaryBrowser((url: string) =>
+                        updateHero({
+                          ...homeConfig.hero,
+                          floatingImage: url,
+                        }),
+                      )
+                    }
+                    className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                    title="Browse ảnh từ Cloudinary"
+                  >
+                    <Search className="w-3 h-3" />
+                    Browse
+                  </button>
+                </div>
               </div>
-              <CldUploadButton
-                uploadPreset="hoanganhthao-upload"
-                onSuccess={(r: any) =>
-                  updateHero({
-                    ...homeConfig.hero,
-                    floatingImage: r.info.secure_url,
-                  })
-                }
-                className="w-full bg-white border border-gray-300 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 shadow-sm"
-              >
-                📸 Chọn Ảnh Nổi
-              </CldUploadButton>
             </div>
           </div>
         </div>
@@ -445,14 +724,27 @@ export function HomeTabContent() {
                         src={item.image}
                         alt={`Service image ${idx + 1}`}
                         fill
-                        className="w-full h-full object-cover transition-transform group-hover/img:scale-110"
+                        className={`w-full h-full object-cover transition-transform group-hover/img:scale-110 ${deletingImages.has(item.image) ? "opacity-50" : ""}`}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-800 font-bold">
                         NO IMG
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                      {item.image && (
+                        <button
+                          onClick={() => {
+                            if (confirm("Xóa ảnh?")) {
+                              updateHomeItem("services", idx, "image", "");
+                            }
+                          }}
+                          className="absolute top-2 right-2 text-[12px] bg-red-500 hover:bg-red-600 text-white px-1.5 py-1 rounded font-bold shadow-sm flex items-center gap-0.5"
+                          title="Xóa ảnh"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <CldUploadButton
                         uploadPreset="hoanganhthao-upload"
                         onSuccess={(r: any) =>
@@ -1044,6 +1336,13 @@ export function HomeTabContent() {
           </div>
         </div>
       </div>
+
+      {/* Cloudinary Browser Modal */}
+      <CloudinaryBrowser
+        isOpen={isBrowserOpen}
+        onClose={() => setIsBrowserOpen(false)}
+        onSelect={handleBrowserSelect}
+      />
     </div>
   );
 }

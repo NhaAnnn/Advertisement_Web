@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react";
+import { useDraft } from "@/app/admin/hooks/useDraft";
 
 import {
   Save,
@@ -32,20 +33,69 @@ export function FooterTabContent() {
     zalo: "",
   });
 
+  // Draft management
+  const { clearDraft } = useDraft(
+    "footer_data",
+    footerData,
+    setFooterData,
+    isChanged,
+  );
+
   useEffect(() => {
-    fetch("/api/config?key=footer_data&t=" + Date.now())
-      .then((r) => r.json())
-      .then((data) => {
-        if (data) {
-          // Đảm bảo các mảng luôn tồn tại để không bị lỗi map
-          setFooterData({
-            ...data,
-            emails: data.emails || [""],
-            categories: data.categories || [""],
-          });
+    const fetchFooterData = async () => {
+      try {
+        // Kiểm tra draft trước - nếu có draft, skip fetch
+        try {
+          const savedDraft = localStorage.getItem("draft_footer_data");
+          if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+            console.log("✅ Restored draft for footer_data from localStorage");
+            setFooterData(parsedDraft);
+            setIsChanged(true);
+            setLoading(false);
+            return; // Skip API call nếu có draft
+          }
+        } catch (error) {
+          console.error("Failed to restore draft:", error);
         }
+
+        const response = await fetch("/api/config?key=footer_data", {
+          headers: {
+            "Cache-Control": "public, max-age=3600", // Cache 1 giờ
+          },
+        });
+        const data = await response.json();
+
+        const newData = {
+          mission: "",
+          address: "",
+          hotline: "",
+          facebook: "",
+          zalo: "",
+          ...(data || {}),
+          emails: data?.emails || [""],
+          categories: data?.categories || [""],
+        };
+
+        setFooterData(newData);
+      } catch (error) {
+        console.error("Lỗi tải Footer data:", error);
+        // Fallback to default structure
+        setFooterData({
+          mission: "",
+          address: "",
+          hotline: "",
+          emails: [""],
+          categories: [""],
+          facebook: "",
+          zalo: "",
+        });
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchFooterData();
   }, []);
 
   const saveFooter = async () => {
@@ -55,10 +105,12 @@ export function FooterTabContent() {
         method: "POST",
         body: JSON.stringify({ key: "footer_data", value: footerData }),
       });
-      alert("✨ Đã cập nhật thông tin Footer thành công!");
+      alert("✨ Chân trang đã lưu thành công!");
+      clearDraft(); // Xóa draft sau khi save thành công
       setIsChanged(false);
     } catch (e) {
       alert("❌ Lỗi khi lưu dữ liệu!");
+      console.error(e);
     } finally {
       setSaving(false);
     }
@@ -107,9 +159,15 @@ export function FooterTabContent() {
             <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800">
               <Layers className="w-6 h-6 text-blue-600" /> Cấu hình Chân trang
             </h2>
-            {isChanged && (
+            {isChanged && !saving && (
               <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse">
                 ⚠️ Chưa lưu
+              </span>
+            )}
+            {saving && (
+              <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded animate-pulse flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Đang lưu...
               </span>
             )}
           </div>
@@ -120,18 +178,18 @@ export function FooterTabContent() {
         <button
           onClick={saveFooter}
           disabled={saving || !isChanged}
-          className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center shadow-md active:scale-95 ${
+          className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center shadow-md active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap ${
             isChanged
               ? "bg-orange-500 text-white hover:bg-orange-600"
-              : "bg-[#16579e] text-white opacity-80"
-          }`}
+              : "bg-[#16579e] text-white hover:bg-blue-800"
+          } ${saving ? "animate-pulse" : ""}`}
         >
           {saving ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <Save className="w-5 h-5" />
           )}
-          {isChanged ? "LƯU THAY ĐỔI" : "ĐÃ LƯU"}
+          {saving ? "ĐANG LƯU..." : isChanged ? "LƯU THAY ĐỔI" : "ĐÃ LƯU"}
         </button>
       </div>
 

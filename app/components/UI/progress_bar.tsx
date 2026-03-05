@@ -16,7 +16,7 @@ export default function ProgressBar() {
   const startProgress = () => {
     navigationStartedRef.current = true;
     setIsVisible(true);
-    setProgress(10);
+    setProgress(30);
 
     // Simulate gradual progress - chạy phù hợp với thời gian load thực tế
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -26,9 +26,9 @@ export default function ProgressBar() {
           // Tăng chậm, phù hợp với thời gian load:
           // Nếu load nhanh (2s): thanh chạy ~15%, pathname change -> 100%
           // Nếu load lâu (10s): thanh chạy ~70%, pathname change -> 100%
-          let increment = 2.5; // 2.5% mỗi 1 giây
+          let increment = 30; // 2.5% mỗi 1 giây
           if (prev >= 70) {
-            increment = 1; // Chậm hơn ở cuối
+            increment = 5; // Chậm hơn ở cuối
           }
           return prev + increment;
         }
@@ -91,7 +91,7 @@ export default function ProgressBar() {
     <>
       {isVisible && (
         <div
-          className="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-primary via-accent to-primary z-[9999] shadow-lg transition-all duration-200 ease-out"
+          className="fixed top-0 left-0 h-[5px] bg-gradient-to-r from-primary via-accent to-primary z-[9999] transition-all duration-200 ease-out shadow-[0_0_20px_rgba(59,130,246,0.8)]"
           style={{
             width: `${Math.min(progress, 100)}%`,
             opacity: progress === 100 ? 0 : 1,
@@ -102,7 +102,7 @@ export default function ProgressBar() {
       {/* Glowing blur effect behind the bar */}
       {isVisible && progress > 0 && progress < 100 && (
         <div
-          className="fixed top-0 left-0 h-[12px] bg-gradient-to-r from-primary/30 via-accent/20 to-transparent blur-md z-[9998] transition-all duration-200"
+          className="fixed top-0 left-0 h-[16px] bg-gradient-to-r from-primary/40 via-accent/25 to-transparent blur-md z-[9998] transition-all duration-200"
           style={{
             width: `${Math.min(progress + 15, 100)}%`,
           }}

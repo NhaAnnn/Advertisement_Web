@@ -4,24 +4,42 @@ import HomePage from "./home_page";
 
 export const dynamic = "force-dynamic";
 
-// Hàm lấy dữ liệu trực tiếp từ Database
+// Hàm lấy dữ liệu trực tiếp từ Database (Tối ưu: 1 query thay vì 5)
 async function getHomeData() {
-  const [hero, services, showcase, process, portfolio] = await Promise.all([
-    prisma.siteConfig.findUnique({ where: { key: "home_hero" } }),
-    prisma.siteConfig.findUnique({ where: { key: "home_services" } }),
-    prisma.siteConfig.findUnique({ where: { key: "home_showcase" } }),
-    prisma.siteConfig.findUnique({ where: { key: "home_process" } }),
-    prisma.siteConfig.findUnique({ where: { key: "home_portfolio" } }),
-  ]);
+  const configs = await prisma.siteConfig.findMany({
+    where: {
+      key: {
+        in: [
+          "home_hero",
+          "home_services",
+          "home_showcase",
+          "home_process",
+          "home_portfolio",
+        ],
+      },
+    },
+  });
+
+  // Chuyển mảng thành object để dễ truy cập
+  const configMap: { [key: string]: any } = {};
+  configs.forEach((config) => {
+    configMap[config.key] = config.value;
+  });
 
   return {
-    hero: hero?.value || null,
-    services: (Array.isArray(services?.value) ? services?.value : []) as any[],
-    showcase: (Array.isArray(showcase?.value) ? showcase?.value : []) as any[],
-    process: (Array.isArray(process?.value) ? process?.value : []) as any[],
-    portfolio: (Array.isArray(portfolio?.value)
-      ? portfolio?.value
-      : []) as any[],
+    hero: configMap.home_hero || null,
+    services: Array.isArray(configMap.home_services)
+      ? configMap.home_services
+      : [],
+    showcase: Array.isArray(configMap.home_showcase)
+      ? configMap.home_showcase
+      : [],
+    process: Array.isArray(configMap.home_process)
+      ? configMap.home_process
+      : [],
+    portfolio: Array.isArray(configMap.home_portfolio)
+      ? configMap.home_portfolio
+      : [],
   };
 }
 

@@ -261,7 +261,7 @@ export default function ServiceClient({
                       <ImageIcon className="w-5 h-5" />
                     </div>
                     <h3 className="text-xl font-bold text-foreground font-serif">
-                      Dự Án Đã Thực Hiện
+                      Ảnh Minh Họa
                     </h3>
                   </div>
 

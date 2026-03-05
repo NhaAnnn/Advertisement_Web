@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { CldUploadButton } from "next-cloudinary";
 import { useRouter } from "next/navigation";
+import { useDraft } from "@/app/admin/hooks/useDraft";
 
 import {
   Search,
@@ -24,6 +26,7 @@ import {
 import { MENU_TREE, CategoryNode } from "../../../data/services_content";
 
 import { CategorySelect } from "@/app/components/UI/category_select";
+import { CloudinaryBrowser } from "./cloudinary_browser";
 import Image from "next/image";
 
 export function ServicesTabContent() {
@@ -40,13 +43,80 @@ export function ServicesTabContent() {
 
   // Trạng thái theo dõi thay đổi chưa lưu
   const [isChanged, setIsChanged] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [deletingImages, setDeletingImages] = useState<Set<string>>(new Set());
+  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
+  const [browserCallback, setBrowserCallback] = useState<
+    ((url: string) => void) | null
+  >(null);
+
+  // Draft management
+  const { clearDraft } = useDraft(
+    selected?.id ? `service_${selected.id}` : "service_new",
+    selected,
+    setSelected,
+    isChanged,
+  );
+
+  // Reload dữ liệu dịch vụ từ database
+  const reloadServiceData = async () => {
+    if (!selected?.id) return;
+    try {
+      const res = await fetch("/api/services", {
+        headers: {
+          "Cache-Control": "no-cache", // Skip cache khi reload
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const found = data.find((item) => item.id === selected.id);
+        if (found) {
+          const normalizedData = {
+            ...found,
+            content: found.content || [],
+            gallery: found.gallery || [],
+            features: found.features || [],
+            specs: found.specs || [],
+            faq: found.faq || [],
+          };
+          setSelected(normalizedData);
+          console.log("✅ Reloaded service data from database");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi reload dữ liệu service:", error);
+      alert("❌ Lỗi khi tải lại dữ liệu");
+    }
+  };
+
+  // Cleanup draft khi selected id thay đổi (khi bài mới được lưu có id)
+  useEffect(() => {
+    if (selected?.id && isCreating === false) {
+      // Xóa draft_service_new khi bài mới đã có id
+      try {
+        localStorage.removeItem("draft_service_new");
+        console.log("🗑️ Cleaned up old draft (service_new)");
+      } catch (error) {
+        console.error("Failed to cleanup old draft:", error);
+      }
+    }
+  }, [selected?.id, isCreating]);
+
+  // Check hasDraft khi selected thay đổi
+  useEffect(() => {
+    const draftKey = selected?.id ? `service_${selected.id}` : "service_new";
+    const hasDraftNow = localStorage.getItem(draftKey) !== null;
+    setHasDraft(hasDraftNow);
+  }, [selected?.id, isCreating]);
 
   // 1. Tải toàn bộ danh sách
   const fetchList = useCallback(async () => {
     setIsInitialLoading(true);
     try {
-      const res = await fetch("/api/services?t=" + Date.now(), {
-        cache: "no-store",
+      const res = await fetch("/api/services", {
+        headers: {
+          "Cache-Control": "public, max-age=60", // Cache 1 phút (short due to updates)
+        },
       });
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -61,7 +131,7 @@ export function ServicesTabContent() {
         setList(normalizedData);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Lỗi tải services:", e);
     } finally {
       setIsInitialLoading(false);
     }
@@ -71,13 +141,28 @@ export function ServicesTabContent() {
     fetchList();
   }, [fetchList]);
 
-  // 2. Chọn bài viết từ RAM
+  // 2. Chọn bài viết từ RAM (+ restore draft nếu có)
   const selectService = (id: string) => {
-    setIsCreating(false);
-    setIsChanged(false); // Reset cờ thay đổi
     const found = list.find((item) => item.id === id);
     if (found) {
+      // Kiểm tra xem có draft trước đó không
+      try {
+        const draftKey = `draft_service_${id}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft) {
+          const parsedDraft = JSON.parse(savedDraft);
+          console.log(`✅ Restored draft for service ${id}`);
+          setSelected(parsedDraft);
+          setIsChanged(true); // Mark có thay đổi vì lấy từ draft
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to restore draft:", error);
+      }
+
+      // Nếu không có draft, dùng data từ list
       setSelected(JSON.parse(JSON.stringify(found)));
+      setIsChanged(false);
     }
   };
 
@@ -113,57 +198,6 @@ export function ServicesTabContent() {
   const updateField = (f: string, v: any) => {
     setSelected((p: any) => ({ ...p, [f]: v }));
     setIsChanged(true); // Đánh dấu đã thay đổi
-  };
-
-  const save = async () => {
-    if (!selected.name || !selected.slug) return alert("Cần nhập tên và slug!");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/services", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selected),
-      });
-
-      if (res.ok) {
-        const savedData = await res.json();
-        alert("✅ Đã lưu thành công!");
-        setIsChanged(false); // Tắt cờ thay đổi
-
-        setList((prev) => {
-          const index = prev.findIndex((item) => item.id === savedData.id);
-          const normalized = {
-            ...savedData,
-            content: savedData.content || [],
-            gallery: savedData.gallery || [],
-            features: savedData.features || [],
-            specs: savedData.specs || [],
-            faq: savedData.faq || [],
-          };
-
-          if (index > -1) {
-            const newList = [...prev];
-            newList[index] = normalized;
-            return newList;
-          } else {
-            return [normalized, ...prev];
-          }
-        });
-
-        router.refresh(); // Refresh lại trang web chính
-
-        if (isCreating) {
-          setIsCreating(false);
-          setSelected((prev: any) => ({ ...prev, id: savedData.id }));
-        }
-      } else {
-        alert("Lỗi khi lưu (Có thể trùng Slug)");
-      }
-    } catch (e) {
-      alert("Lỗi kết nối");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const del = async () => {
@@ -232,6 +266,152 @@ export function ServicesTabContent() {
     const g = [...selected.gallery];
     g.splice(index, 1);
     updateField("gallery", g);
+  };
+
+  const extractPublicIdFromUrl = (url: string): string => {
+    try {
+      // URL mẫu: https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg
+      const parts = url.split("/upload/");
+      if (parts.length < 2) return "";
+
+      // Lấy phần sau /upload/, ví dụ: "v1312461204/folder/sample.jpg"
+      let publicIdWithExt = parts[1];
+
+      // Nếu có phần version (bắt đầu bằng 'v' và theo sau là số), hãy bỏ nó đi
+      if (publicIdWithExt.match(/^v\d+\//)) {
+        publicIdWithExt = publicIdWithExt.substring(
+          publicIdWithExt.indexOf("/") + 1,
+        );
+      }
+
+      // Bỏ phần mở rộng file (.jpg, .png, .webp...)
+      return publicIdWithExt.replace(/\.[^/.]+$/, "");
+    } catch (e) {
+      console.error("Lỗi trích xuất PublicId:", e);
+      return "";
+    }
+  };
+
+  // Delete image từ Cloudinary khi user confirm
+  const deleteImageFromCloudinary = async (imageUrl: string) => {
+    const publicId = extractPublicIdFromUrl(imageUrl);
+    if (!publicId) {
+      console.error("❌ Could not extract publicId from URL:", imageUrl);
+      alert("❌ Lỗi: Không thể trích xuất ID ảnh từ URL");
+      return false;
+    }
+
+    setDeletingImages((prev) => new Set([...prev, imageUrl]));
+
+    try {
+      console.log("🗑️ Deleting image with publicId:", publicId);
+      const res = await fetch("/api/delete-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicId }),
+      });
+
+      const data = await res.json();
+      console.log("📡 Delete response:", data);
+
+      if (!res.ok) {
+        console.error(
+          "❌ API returned error:",
+          res.status,
+          data.error || data.details,
+        );
+        alert(`❌ Lỗi: ${data.error || data.details || "Không thể xóa ảnh"}`);
+        return false;
+      }
+
+      if (data.success) {
+        console.log("✅ Image deleted from Cloudinary:", publicId);
+        return true;
+      } else {
+        console.error("❌ Failed to delete image:", data);
+        alert(`❌ Lỗi: ${data.error || "Không thể xóa ảnh từ server"}`);
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error deleting image:", error);
+      alert(
+        `❌ Lỗi kết nối: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return false;
+    } finally {
+      setDeletingImages((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(imageUrl);
+        return newSet;
+      });
+    }
+  };
+
+  // Hàm mở Cloudinary Browser (không cần login)
+  const openCloudinaryBrowser = (callback: (url: string) => void) => {
+    setBrowserCallback(() => callback);
+    setIsBrowserOpen(true);
+  };
+
+  const handleBrowserSelect = (url: string) => {
+    if (browserCallback) {
+      browserCallback(url);
+    }
+  };
+
+  const save = async () => {
+    if (!selected.name || !selected.slug) return alert("Cần nhập tên và slug!");
+    setSaving(true);
+    try {
+      const res = await fetch("/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selected),
+      });
+
+      if (res.ok) {
+        const savedData = await res.json();
+        alert("✅ Đã lưu thành công!");
+
+        // Clear draft sau khi save thành công
+        clearDraft();
+        setIsChanged(false);
+        setHasDraft(false);
+
+        setList((prev) => {
+          const index = prev.findIndex((item) => item.id === savedData.id);
+          const normalized = {
+            ...savedData,
+            content: savedData.content || [],
+            gallery: savedData.gallery || [],
+            features: savedData.features || [],
+            specs: savedData.specs || [],
+            faq: savedData.faq || [],
+          };
+
+          if (index > -1) {
+            const newList = [...prev];
+            newList[index] = normalized;
+            return newList;
+          } else {
+            return [normalized, ...prev];
+          }
+        });
+
+        router.refresh();
+
+        if (isCreating) {
+          setIsCreating(false);
+          setSelected((prev: any) => ({ ...prev, id: savedData.id }));
+        }
+      } else {
+        alert("Lỗi khi lưu (Có thể trùng Slug)");
+      }
+    } catch (e) {
+      alert("Lỗi kết nối");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (isInitialLoading) {
@@ -311,6 +491,12 @@ export function ServicesTabContent() {
                       ID: {selected.id}
                     </span>
                   )}
+                  {saving && (
+                    <span className="ml-2 flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded animate-pulse">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span className="text-[10px]">Đang lưu...</span>
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -320,7 +506,7 @@ export function ServicesTabContent() {
                   </h2>
 
                   {/* Cảnh báo thay đổi: Thêm shrink-0 để biểu tượng cảnh báo không bị biến dạng */}
-                  {isChanged && (
+                  {isChanged && !saving && (
                     <span className="shrink-0 text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded animate-pulse flex items-center gap-1">
                       <span className="hidden sm:inline">Chưa lưu</span> ⚠️
                     </span>
@@ -333,7 +519,8 @@ export function ServicesTabContent() {
                 {!isCreating && (
                   <button
                     onClick={del}
-                    className="bg-white border border-red-200 text-red-600 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-red-50 hover:border-red-300 transition-all flex items-center gap-2 shadow-sm"
+                    disabled={saving}
+                    className="bg-white border border-red-200 text-red-600 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-red-50 hover:border-red-300 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Xóa bài viết"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -341,14 +528,36 @@ export function ServicesTabContent() {
                   </button>
                 )}
 
+                {isChanged && (
+                  <button
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Hủy tất cả thay đổi? Dữ liệu sẽ được trả lại như ban đầu.",
+                        )
+                      ) {
+                        clearDraft();
+                        setIsChanged(false);
+                        setHasDraft(false);
+                        reloadServiceData(); // Reload từ database
+                      }
+                    }}
+                    className="bg-white border border-gray-200 text-gray-700 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-gray-100 hover:border-gray-300 transition-all flex items-center gap-2 shadow-sm"
+                    title="Hủy thay đổi chưa lưu"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden md:inline">Hủy Thay Đổi</span>
+                  </button>
+                )}
+
                 <button
                   onClick={save}
                   disabled={!isChanged && !isCreating}
-                  className={`flex items-center gap-2 px-5 md:px-8 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-5 md:px-8 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
                     isChanged || isCreating
-                      ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg animate-pulse"
+                      ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg"
                       : "bg-[#16579e] text-white hover:bg-blue-800"
-                  }`}
+                  } ${saving ? "animate-pulse" : ""}`}
                 >
                   {saving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -356,11 +565,13 @@ export function ServicesTabContent() {
                     <Save className="w-4 h-4" />
                   )}
                   <span>
-                    {isCreating
-                      ? "Tạo Ngay"
-                      : isChanged
-                        ? "Lưu Thay Đổi"
-                        : "Đã Lưu"}
+                    {saving
+                      ? "Đang lưu..."
+                      : isCreating
+                        ? "Tạo Ngay"
+                        : isChanged
+                          ? "Lưu Thay Đổi"
+                          : "Đã Lưu"}
                   </span>
                 </button>
               </div>
@@ -398,7 +609,7 @@ export function ServicesTabContent() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">
-                          Đường dẫn (Slug){" "}
+                          Đường dẫn (Slug)
                           <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -424,7 +635,7 @@ export function ServicesTabContent() {
                         Mô tả ngắn (SEO)
                       </label>
                       <textarea
-                        className="w-full border border-gray-300 p-3 rounded-xl h-24 focus:ring-2 ring-blue-200 outline-none resize-none text-sm"
+                        className="w-full border border-gray-300 p-3 rounded-xl h-72 focus:ring-2 ring-blue-200 outline-none resize-none text-sm"
                         value={selected.excerpt || ""}
                         onChange={(e) => updateField("excerpt", e.target.value)}
                         placeholder="Mô tả hiển thị trên Google..."
@@ -487,7 +698,7 @@ export function ServicesTabContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <textarea
-                            className="border border-gray-200 p-3 rounded-xl h-40 text-sm focus:ring-2 ring-blue-200 outline-none leading-relaxed bg-white"
+                            className="border border-gray-200 p-3 rounded-xl h-64 text-sm focus:ring-2 ring-blue-200 outline-none leading-relaxed bg-white"
                             value={
                               Array.isArray(s.content)
                                 ? s.content.join("\n")
@@ -502,11 +713,11 @@ export function ServicesTabContent() {
                             }
                             placeholder="Nhập nội dung văn bản..."
                           />
-                          <div className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center bg-white h-40 relative group/img overflow-hidden">
+                          <div className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center bg-white h-64 relative group/img overflow-hidden">
                             {s.image ? (
                               <Image
                                 src={s.image}
-                                className="w-full h-full object-contain p-2"
+                                className={`w-full h-full object-contain p-2 ${deletingImages.has(s.image) ? "opacity-50" : ""}`}
                                 alt={`Section image ${i + 1}`}
                                 width={400}
                                 height={320}
@@ -520,16 +731,41 @@ export function ServicesTabContent() {
                                 </span>
                               </div>
                             )}
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                              {s.image && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm("Xóa ảnh này?")) {
+                                      updateSection(i, "image", "");
+                                    }
+                                  }}
+                                  className="absolute top-2 right-2 text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg font-bold shadow-lg flex items-center gap-1"
+                                  title="Xóa ảnh minh họa"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                               <CldUploadButton
                                 uploadPreset="hoanganhthao-upload"
                                 onSuccess={(r: any) =>
                                   updateSection(i, "image", r.info.secure_url)
                                 }
-                                className="text-xs bg-white px-4 py-2 rounded-lg font-bold hover:bg-gray-100 shadow-lg"
+                                className="text-xs bg-white hover:bg-gray-100 px-4 py-2 rounded-lg font-bold shadow-lg"
                               >
-                                Tải Ảnh Lên
+                                {s.image ? "Thay Đổi" : "Tải Ảnh Lên"}
                               </CldUploadButton>
+                              <button
+                                onClick={() =>
+                                  openCloudinaryBrowser((url: string) =>
+                                    updateSection(i, "image", url),
+                                  )
+                                }
+                                className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-1"
+                                title="Browse ảnh từ Cloudinary"
+                              >
+                                <Search className="w-3 h-3" />
+                                Browse
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -546,22 +782,41 @@ export function ServicesTabContent() {
                         <ImageIcon className="w-5 h-5" />
                       </div>
                       <h3 className="font-bold text-gray-800 text-lg">
-                        Thư Viện Ảnh (Gallery)
+                        Ảnh Minh Họa
                       </h3>
                     </div>
-                    <CldUploadButton
-                      uploadPreset="hoanganhthao-upload"
-                      options={{ multiple: true }}
-                      onSuccess={(r: any) =>
-                        setSelected((p: any) => ({
-                          ...p,
-                          gallery: [...(p.gallery || []), r.info.secure_url],
-                        }))
-                      }
-                      className="bg-blue-50 text-[#16579e] px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 flex items-center gap-2 transition-colors"
-                    >
-                      + Thêm ảnh
-                    </CldUploadButton>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          openCloudinaryBrowser((url: string) => {
+                            const newGallery = [
+                              ...(selected.gallery || []),
+                              url,
+                            ];
+                            updateField("gallery", newGallery);
+                          })
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-600 flex items-center gap-2 transition-colors"
+                        title="Browse ảnh từ Cloudinary"
+                      >
+                        <Search className="w-3 h-3" />
+                        Browse
+                      </button>
+                      <CldUploadButton
+                        uploadPreset="hoanganhthao-upload"
+                        options={{ multiple: true }}
+                        onSuccess={(r: any) => {
+                          const newGallery = [
+                            ...(selected.gallery || []),
+                            r.info.secure_url,
+                          ];
+                          updateField("gallery", newGallery);
+                        }}
+                        className="bg-blue-50 text-[#16579e] px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 flex items-center gap-2 transition-colors"
+                      >
+                        + Thêm ảnh
+                      </CldUploadButton>
+                    </div>
                   </div>
 
                   {selected.gallery?.length === 0 ? (
@@ -578,22 +833,40 @@ export function ServicesTabContent() {
                           <Image
                             src={img}
                             alt={`Gallery image ${i + 1}`}
-                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                            className={`w-full h-full object-cover hover:scale-110 transition-transform duration-500 ${deletingImages.has(img) ? "opacity-50" : ""}`}
                             width={300}
                             height={300}
                             sizes="(max-width: 768px) 50vw, 25vw"
                           />
-                          {/* Nút xóa ảnh */}
-                          <button
-                            onClick={() => {
-                              if (confirm("Xóa ảnh này?"))
-                                removeGalleryImage(i);
-                            }}
-                            className="absolute top-2 right-2 p-1.5 bg-white/90 text-red-500 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-10"
-                            title="Xóa ảnh này"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {/* Delete & Browse button */}
+                          {img && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  if (confirm("Xóa ảnh này?")) {
+                                    removeGalleryImage(i);
+                                  }
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all z-10"
+                                title="Xóa ảnh này"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  openCloudinaryBrowser((url: string) => {
+                                    const g = [...selected.gallery];
+                                    g[i] = url;
+                                    updateField("gallery", g);
+                                  })
+                                }
+                                className="absolute top-2 right-12 p-1.5 bg-blue-500 text-white rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 z-10"
+                                title="Browse ảnh từ Cloudinary"
+                              >
+                                <Search className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -791,7 +1064,7 @@ export function ServicesTabContent() {
                         <Image
                           alt="Cover Image"
                           src={selected.coverImage}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${deletingImages.has(selected.coverImage) ? "opacity-50" : ""}`}
                           width={600}
                           height={360}
                           sizes="(max-width: 768px) 100vw, 500px"
@@ -801,16 +1074,42 @@ export function ServicesTabContent() {
                           Trống
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {selected.coverImage && (
+                          <button
+                            onClick={() => {
+                              if (confirm("Xóa ảnh đại diện?")) {
+                                updateField("coverImage", "");
+                              }
+                            }}
+                            className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                            title="Xóa ảnh đại diện"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Xóa
+                          </button>
+                        )}
                         <CldUploadButton
                           uploadPreset="hoanganhthao-upload"
                           onSuccess={(r: any) =>
                             updateField("coverImage", r.info.secure_url)
                           }
-                          className="text-xs bg-white px-3 py-1.5 rounded-lg font-bold shadow-sm"
+                          className="text-xs bg-white hover:bg-gray-100 px-3 py-1.5 rounded-lg font-bold shadow-sm"
                         >
-                          Thay Đổi
+                          {selected.coverImage ? "Đổi" : "Tải Lên"}
                         </CldUploadButton>
+                        <button
+                          onClick={() =>
+                            openCloudinaryBrowser((url: string) =>
+                              updateField("coverImage", url),
+                            )
+                          }
+                          className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                          title="Browse ảnh từ Cloudinary"
+                        >
+                          <Search className="w-3 h-3" />
+                          Browse
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -884,12 +1183,19 @@ export function ServicesTabContent() {
               Chưa chọn bài viết nào
             </p>
             <p className="text-sm">
-              Hãy chọn từ danh sách bên trái hoặc bấm{" "}
+              Hãy chọn từ danh sách bên trái hoặc bấm
               <b className="text-green-600">Soạn Bài Mới</b>
             </p>
           </div>
         )}
       </div>
+
+      {/* Cloudinary Browser Modal */}
+      <CloudinaryBrowser
+        isOpen={isBrowserOpen}
+        onClose={() => setIsBrowserOpen(false)}
+        onSelect={handleBrowserSelect}
+      />
     </div>
   );
 }

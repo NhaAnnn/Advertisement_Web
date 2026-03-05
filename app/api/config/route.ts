@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
 import { prisma } from "../../../prisma/prisma";
@@ -9,10 +10,30 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // 2. Import c
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const key = searchParams.get("key");
-  if (!key) return NextResponse.json(null);
+  const keys = searchParams.get("keys"); // keys=key1,key2,key3
 
-  const data = await prisma.siteConfig.findUnique({ where: { key } });
-  return NextResponse.json(data ? data.value : null);
+  try {
+    if (keys) {
+      // Lấy multiple keys cùng lúc
+      const keyList = keys.split(",").filter((k) => k.trim());
+      const results = await prisma.siteConfig.findMany({
+        where: { key: { in: keyList } },
+      });
+      const data: any = {};
+      results.forEach((item) => {
+        data[item.key] = item.value;
+      });
+      return NextResponse.json(data);
+    } else if (key) {
+      // Lấy 1 key
+      const data = await prisma.siteConfig.findUnique({ where: { key } });
+      return NextResponse.json(data ? data.value : null);
+    }
+    return NextResponse.json(null);
+  } catch (error) {
+    console.error("Config GET error:", error);
+    return NextResponse.json({ error: "Lỗi lấy dữ liệu" }, { status: 500 });
+  }
 }
 
 // POST: BẢO MẬT (Chỉ Admin mới được sửa)
