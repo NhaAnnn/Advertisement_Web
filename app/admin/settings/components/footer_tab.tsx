@@ -98,6 +98,35 @@ export function FooterTabContent() {
     fetchFooterData();
   }, []);
 
+  // Reload dữ liệu chân trang từ database
+  const reloadFooterData = async () => {
+    try {
+      const response = await fetch("/api/config?key=footer_data", {
+        headers: {
+          "Cache-Control": "no-cache", // Skip cache khi reload
+        },
+      });
+      const data = await response.json();
+
+      const newData = {
+        mission: "",
+        address: "",
+        hotline: "",
+        facebook: "",
+        zalo: "",
+        ...(data || {}),
+        emails: data?.emails || [""],
+        categories: data?.categories || [""],
+      };
+
+      setFooterData(newData);
+      console.log("✅ Reloaded footer data from database");
+    } catch (error) {
+      console.error("Lỗi reload dữ liệu footer:", error);
+      alert("❌ Lỗi khi tải lại dữ liệu");
+    }
+  };
+
   const saveFooter = async () => {
     setSaving(true);
     try {
@@ -175,22 +204,44 @@ export function FooterTabContent() {
             Quản lý thông tin chung, liên hệ và mạng xã hội.
           </p>
         </div>
-        <button
-          onClick={saveFooter}
-          disabled={saving || !isChanged}
-          className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center shadow-md active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap ${
-            isChanged
-              ? "bg-orange-500 text-white hover:bg-orange-600"
-              : "bg-[#16579e] text-white hover:bg-blue-800"
-          } ${saving ? "animate-pulse" : ""}`}
-        >
-          {saving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Save className="w-5 h-5" />
+        <div className="flex gap-3">
+          {isChanged && (
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    "Hủy tất cả thay đổi? Dữ liệu sẽ được trả lại như ban đầu.",
+                  )
+                ) {
+                  clearDraft();
+                  setIsChanged(false);
+                  reloadFooterData(); // Reload từ database
+                }
+              }}
+              className="px-4 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300 whitespace-nowrap shadow-sm"
+              title="Hủy thay đổi chưa lưu"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden md:inline">Hủy Thay Đổi</span>
+            </button>
           )}
-          {saving ? "ĐANG LƯU..." : isChanged ? "LƯU THAY ĐỔI" : "ĐÃ LƯU"}
-        </button>
+          <button
+            onClick={saveFooter}
+            disabled={saving || !isChanged}
+            className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex gap-2 items-center shadow-md active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap ${
+              isChanged
+                ? "bg-orange-500 text-white hover:bg-orange-600"
+                : "bg-[#16579e] text-white hover:bg-blue-800"
+            } ${saving ? "animate-pulse" : ""}`}
+          >
+            {saving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            {saving ? "ĐANG LƯU..." : isChanged ? "LƯU THAY ĐỔI" : "ĐÃ LƯU"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
