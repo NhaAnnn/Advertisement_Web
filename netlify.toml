@@ -1,8 +1,13 @@
 [build]
 command = "npm run build"
 publish = ".next"
+functions = "netlify/functions"
+
+[functions]
+node_bundler = "esbuild"
 
 [[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
+condition = "Status = 404"
