@@ -52,6 +52,9 @@ export function ServicesTabContent() {
     ((url: string) => void) | null
   >(null);
 
+  // 🔑 DERIVED STATE: Nếu selected không có ID thì đang tạo mới (robust hơn so với state boolean)
+  const isCreatingMode = selected && !selected.id;
+
   // Draft management
   const { clearDraft } = useDraft(
     selected?.id ? `service_${selected.id}` : "service_new",
@@ -104,6 +107,16 @@ export function ServicesTabContent() {
     }
   }, [selected?.id, isCreating]);
 
+  // Reset isCreating khi bài mới được lưu và nhận ID
+  useEffect(() => {
+    if (isCreating && selected?.id) {
+      console.log(
+        "🔄 Resetting isCreating to false because new service got ID",
+      );
+      setIsCreating(false);
+    }
+  }, [selected?.id]);
+
   // Check hasDraft khi selected thay đổi
   useEffect(() => {
     const draftKey = selected?.id ? `service_${selected.id}` : "service_new";
@@ -155,12 +168,32 @@ export function ServicesTabContent() {
 
   // 2. Chọn bài viết từ RAM (+ restore draft nếu có)
   const selectService = (id: string) => {
+    // Debug logs
+    console.log("🔍 selectService called:", {
+      id,
+      isCreatingMode,
+      isChanged,
+      selectedId: selected?.id,
+      selectedHasContent: !!selected,
+      isBareNewArticle: selected && !selected.id && selected.name === "",
+    });
+
     // Kiểm tra xem có đang tạo bài mới hoặc có thay đổi chưa lưu
-    if ((isCreating || isChanged) && selected) {
+    // Thêm fallback: nếu selected không có id và là bài mới trắng (name == "") thì cũng coi là đang tạo
+    const isEditingUnsaved =
+      (isCreatingMode ||
+        isChanged ||
+        (selected && !selected.id && selected.name === "")) &&
+      selected;
+
+    if (isEditingUnsaved) {
+      console.log("⚠️ Confirm dialog will show - unsaved changes detected");
       if (!confirm("⚠️ Bạn đang tạo/chỉnh sửa bài viết. Hủy mà không lưu?")) {
+        console.log("❌ User cancelled navigation");
         return; // Hủy việc chuyển sang bài khác
       }
       // Nếu xác nhận hủy, reset toàn bộ state
+      console.log("✅ User confirmed - resetting state");
       resetToDefault();
     }
 
@@ -473,7 +506,7 @@ export function ServicesTabContent() {
                 key={service.id}
                 onClick={() => selectService(service.id)}
                 className={`w-full text-left px-4 py-4 rounded-xl text-sm flex items-center justify-between group transition-all border ${
-                  selected?.id === service.id && !isCreating
+                  selected?.id === service.id && !isCreatingMode
                     ? "bg-white border-[#16579e] shadow-md ring-1 ring-[#16579e]"
                     : "bg-white border-transparent hover:border-gray-300 hover:shadow-sm text-gray-600"
                 }`}
@@ -505,8 +538,8 @@ export function ServicesTabContent() {
               {/* Cột trái: Thông tin & Tiêu đề - Thêm min-w-0 để truncate hoạt động */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  {isCreating ? "Chế độ tạo mới" : "Chế độ chỉnh sửa"}
-                  {!isCreating && (
+                  {isCreatingMode ? "Chế độ tạo mới" : "Chế độ chỉnh sửa"}
+                  {!isCreatingMode && (
                     <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-[10px]">
                       ID: {selected.id}
                     </span>
@@ -522,7 +555,7 @@ export function ServicesTabContent() {
                 <div className="flex items-center gap-3">
                   {/* Tiêu đề: Sử dụng truncate để tự thêm dấu "..." khi hết không gian */}
                   <h2 className="text-xl md:text-2xl font-black text-gray-800 truncate">
-                    {isCreating ? "📝 Bài Viết Mới" : selected.name}
+                    {isCreatingMode ? "📝 Bài Viết Mới" : selected.name}
                   </h2>
 
                   {/* Cảnh báo thay đổi: Thêm shrink-0 để biểu tượng cảnh báo không bị biến dạng */}
@@ -536,7 +569,7 @@ export function ServicesTabContent() {
 
               {/* Cột phải: Nhóm nút bấm - Thêm shrink-0 để không bao giờ bị tiêu đề ép nhỏ lại */}
               <div className="flex gap-2 md:gap-3 shrink-0">
-                {!isCreating && (
+                {!isCreatingMode && (
                   <button
                     onClick={del}
                     disabled={saving}
@@ -556,7 +589,7 @@ export function ServicesTabContent() {
                           "Hủy tất cả thay đổi? Dữ liệu sẽ được trả lại như ban đầu.",
                         )
                       ) {
-                        if (isCreating) {
+                        if (isCreatingMode) {
                           // Nếu đang tạo bài mới, thoát về null
                           resetToDefault();
                         } else {
@@ -578,9 +611,9 @@ export function ServicesTabContent() {
 
                 <button
                   onClick={save}
-                  disabled={!isChanged && !isCreating}
+                  disabled={!isChanged && !isCreatingMode}
                   className={`flex items-center gap-2 px-5 md:px-8 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isChanged || isCreating
+                    isChanged || isCreatingMode
                       ? "bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg"
                       : "bg-[#16579e] text-white hover:bg-blue-800"
                   } ${saving ? "animate-pulse" : ""}`}
@@ -593,7 +626,7 @@ export function ServicesTabContent() {
                   <span>
                     {saving
                       ? "Đang lưu..."
-                      : isCreating
+                      : isCreatingMode
                         ? "Tạo Ngay"
                         : isChanged
                           ? "Lưu Thay Đổi"
