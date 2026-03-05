@@ -143,6 +143,18 @@ export function ServicesTabContent() {
 
   // 2. Chọn bài viết từ RAM (+ restore draft nếu có)
   const selectService = (id: string) => {
+    // Kiểm tra xem có đang tạo bài mới hoặc có thay đổi chưa lưu
+    if ((isCreating || isChanged) && selected) {
+      if (!confirm("⚠️ Bạn đang tạo/chỉnh sửa bài viết. Hủy mà không lưu?")) {
+        return; // Hủy việc chuyển sang bài khác
+      }
+      // Nếu xác nhận hủy, clear draft
+      clearDraft();
+      setIsCreating(false);
+      setIsChanged(false);
+      setHasDraft(false);
+    }
+
     const found = list.find((item) => item.id === id);
     if (found) {
       // Kiểm tra xem có draft trước đó không
@@ -539,7 +551,15 @@ export function ServicesTabContent() {
                         clearDraft();
                         setIsChanged(false);
                         setHasDraft(false);
-                        reloadServiceData(); // Reload từ database
+
+                        if (isCreating) {
+                          // Nếu đang tạo bài mới, thoát về null
+                          setSelected(null);
+                          setIsCreating(false);
+                        } else {
+                          // Nếu đang chỉnh sửa bài cũ, reload từ database
+                          reloadServiceData();
+                        }
                       }
                     }}
                     className="bg-white border border-gray-200 text-gray-700 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-gray-100 hover:border-gray-300 transition-all flex items-center gap-2 shadow-sm"
