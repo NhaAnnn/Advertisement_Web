@@ -143,6 +143,16 @@ export function ServicesTabContent() {
     fetchList();
   }, [fetchList]);
 
+  // Reset toàn bộ state về mặc định
+  const resetToDefault = useCallback(() => {
+    clearDraft();
+    setSelected(null);
+    setIsCreating(false);
+    setIsChanged(false);
+    setHasDraft(false);
+    console.log("🔄 Reset to default state");
+  }, [clearDraft]);
+
   // 2. Chọn bài viết từ RAM (+ restore draft nếu có)
   const selectService = (id: string) => {
     // Kiểm tra xem có đang tạo bài mới hoặc có thay đổi chưa lưu
@@ -150,18 +160,12 @@ export function ServicesTabContent() {
       if (!confirm("⚠️ Bạn đang tạo/chỉnh sửa bài viết. Hủy mà không lưu?")) {
         return; // Hủy việc chuyển sang bài khác
       }
-      // Nếu xác nhận hủy, clear draft
-      clearDraft();
-      setIsCreating(false);
-      setIsChanged(false);
-      setHasDraft(false);
+      // Nếu xác nhận hủy, reset toàn bộ state
+      resetToDefault();
     }
 
     const found = list.find((item) => item.id === id);
     if (found) {
-      // Reset chế độ tạo mới khi chuyển sang bài cũ
-      setIsCreating(false);
-
       // Kiểm tra xem có draft trước đó không
       try {
         const draftKey = `draft_service_${id}`;
@@ -180,6 +184,7 @@ export function ServicesTabContent() {
       // Nếu không có draft, dùng data từ list
       setSelected(JSON.parse(JSON.stringify(found)));
       setIsChanged(false);
+      setIsCreating(false); // Đảm bảo reset creating mode
     }
   };
 
@@ -224,9 +229,7 @@ export function ServicesTabContent() {
       await fetch(`/api/services?slug=${selected.slug}`, { method: "DELETE" });
       alert("🗑️ Đã xóa thành công!");
       setList((prev) => prev.filter((item) => item.id !== selected.id));
-      setSelected(null);
-      setIsCreating(false);
-      setIsChanged(false);
+      resetToDefault(); // Reset toàn bộ state
       router.refresh(); // Refresh lại trang web chính
     } catch (e) {
       alert("Lỗi khi xóa");
@@ -553,16 +556,14 @@ export function ServicesTabContent() {
                           "Hủy tất cả thay đổi? Dữ liệu sẽ được trả lại như ban đầu.",
                         )
                       ) {
-                        clearDraft();
-                        setIsChanged(false);
-                        setHasDraft(false);
-
                         if (isCreating) {
                           // Nếu đang tạo bài mới, thoát về null
-                          setSelected(null);
-                          setIsCreating(false);
+                          resetToDefault();
                         } else {
                           // Nếu đang chỉnh sửa bài cũ, reload từ database
+                          clearDraft();
+                          setIsChanged(false);
+                          setHasDraft(false);
                           reloadServiceData();
                         }
                       }

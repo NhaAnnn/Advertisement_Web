@@ -1,44 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
- 
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { CldUploadButton } from "next-cloudinary";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-import {
-  Search,
-  Save,
-  Loader2,
-  Edit3,
-  ChevronRight,
-  Plus,
-  Trash2,
-  Image as ImageIcon,
-  LayoutTemplate,
-  CheckCircle2,
-  FileText,
-  Grid,
-  Layers,
-  Monitor,
-  RefreshCcw,
-  X,
-  MapPin,
-  HelpCircle,
-  LogOut,
-  MessageCircle,
-  Facebook,
-  Mail,
-  Globe,
-  Phone,
-} from "lucide-react";
+import { Grid, Layers, Monitor, RefreshCcw, LogOut } from "lucide-react";
 
 // Import MENU_TREE
-import { MENU_TREE, CategoryNode } from "../../data/services_content";
 
 import { signOut } from "next-auth/react";
-import { CategorySelect } from "@/app/components/UI/category_select";
-import Image from "next/image";
 import { HomeTabContent } from "./components/home_tab";
 import { ServicesTabContent } from "./components/services_tab";
 import { FooterTabContent } from "./components/footer_tab";
