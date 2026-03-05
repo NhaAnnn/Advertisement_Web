@@ -168,32 +168,35 @@ export function ServicesTabContent() {
 
   // 2. Chọn bài viết từ RAM (+ restore draft nếu có)
   const selectService = (id: string) => {
-    // Debug logs
-    console.log("🔍 selectService called:", {
+    // ⚠️ SAFEGUARD: Check localStorage directly vì state có thể không sync trên Netlify
+    const hasDraftNew = localStorage.getItem("draft_service_new") !== null;
+
+    console.warn("🔍 selectService called:", {
       id,
+      hasDraftNew,
       isCreatingMode,
       isChanged,
       selectedId: selected?.id,
-      selectedHasContent: !!selected,
-      isBareNewArticle: selected && !selected.id && selected.name === "",
     });
 
-    // Kiểm tra xem có đang tạo bài mới hoặc có thay đổi chưa lưu
-    // Thêm fallback: nếu selected không có id và là bài mới trắng (name == "") thì cũng coi là đang tạo
-    const isEditingUnsaved =
-      (isCreatingMode ||
-        isChanged ||
-        (selected && !selected.id && selected.name === "")) &&
-      selected;
-
-    if (isEditingUnsaved) {
-      console.log("⚠️ Confirm dialog will show - unsaved changes detected");
-      if (!confirm("⚠️ Bạn đang tạo/chỉnh sửa bài viết. Hủy mà không lưu?")) {
-        console.log("❌ User cancelled navigation");
-        return; // Hủy việc chuyển sang bài khác
+    // Nếu có draft bài mới chưa lưu, confirm trước
+    if (hasDraftNew) {
+      console.warn("⚠️ Found unsaved new article draft - showing confirm");
+      if (
+        !confirm(
+          "⚠️ Bạn đang tạo bài viết mới. Hủy bài mới và chuyển sang bài khác?",
+        )
+      ) {
+        console.log("❌ User cancelled - staying on new article");
+        return;
       }
-      // Nếu xác nhận hủy, reset toàn bộ state
-      console.log("✅ User confirmed - resetting state");
+      // User confirmed - clear draft
+      console.log("✅ User confirmed - clearing draft_service_new");
+      try {
+        localStorage.removeItem("draft_service_new");
+      } catch (e) {
+        console.error("Failed to clear draft_service_new:", e);
+      }
       resetToDefault();
     }
 
