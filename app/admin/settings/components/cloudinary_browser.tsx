@@ -1,13 +1,14 @@
  
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { Search, X, Loader2, ImageIcon, Check, Upload } from "lucide-react";
+import { Search, X, Loader2, ImageIcon, Check, Upload, AlertCircle } from "lucide-react";
 import { CldUploadButton } from "next-cloudinary";
 import Image from "next/image";
 
 export function CloudinaryBrowser({ isOpen, onClose, onSelect }: any) {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
@@ -22,16 +23,29 @@ export function CloudinaryBrowser({ isOpen, onClose, onSelect }: any) {
 
   const fetchAssets = async (query: string) => {
     setLoading(true);
+    setError(null);
     try {
+      console.log("📥 Fetching Cloudinary assets with query:", query);
       const response = await fetch(
         `/api/cloudinary-assets?query=${encodeURIComponent(query)}`,
       );
       const data = await response.json();
+      console.log("📤 Response:", data);
+      
       if (data.success) {
+        console.log("✅ Loaded", data.assets.length, "assets from Cloudinary");
         setAssets(data.assets);
+        setError(null);
+      } else {
+        console.error("❌ API returned error:", data.error);
+        setError(data.error || "Không thể tải danh sách ảnh");
+        setAssets([]);
       }
     } catch (error) {
-      console.error("Fetch error:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error("❌ Fetch error:", errorMsg);
+      setError(errorMsg);
+      setAssets([]);
     } finally {
       setLoading(false);
     }
@@ -138,6 +152,18 @@ export function CloudinaryBrowser({ isOpen, onClose, onSelect }: any) {
             <div className="h-full flex flex-col items-center justify-center gap-2">
               <Loader2 className="animate-spin text-blue-600" size={32} />
               <p className="text-sm text-gray-500">Đang tải danh sách...</p>
+            </div>
+          ) : error ? (
+            <div className="h-full flex flex-col items-center justify-center text-center gap-3">
+              <AlertCircle size={48} className="text-red-400" />
+              <p className="font-bold text-red-600">Lỗi tải danh sách</p>
+              <p className="text-sm text-gray-600 max-w-xs">{error}</p>
+              <button
+                onClick={() => fetchAssets(searchQuery)}
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700"
+              >
+                Thử lại
+              </button>
             </div>
           ) : assets.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center opacity-20">
