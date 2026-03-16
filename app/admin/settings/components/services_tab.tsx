@@ -276,8 +276,11 @@ export function ServicesTabContent() {
   };
 
   const updateField = (f: string, v: any) => {
-    setSelected((p: any) => ({ ...p, [f]: v }));
-    setIsChanged(true); // Đánh dấu đã thay đổi
+    setSelected((prev: any) => {
+      if (!prev) return null;
+      return { ...prev, [f]: v };
+    });
+    setIsChanged(true);
   };
 
   const del = async () => {
@@ -330,9 +333,13 @@ export function ServicesTabContent() {
   };
 
   const updateSection = (i: number, f: string, v: any) => {
-    const c = [...selected.content];
-    c[i] = { ...c[i], [f]: v };
-    updateField("content", c);
+    setSelected((prev: any) => {
+      if (!prev) return null;
+      const newContent = [...prev.content];
+      newContent[i] = { ...newContent[i], [f]: v };
+      return { ...prev, content: newContent };
+    });
+    setIsChanged(true);
   };
 
   const addSection = () => {
@@ -635,7 +642,11 @@ export function ServicesTabContent() {
       {/* RIGHT: FORM CHỈNH SỬA */}
       <div className="flex-1 h-full overflow-y-auto bg-gray-100/50 custom-scrollbar relative">
         {selected ? (
-          <div className="p-10 pb-40 space-y-8 max-w-5xl mx-auto">
+          // THÊM KEY VÀO ĐÂY: Quan trọng nhất để không bị nhảy nội dung bài khác
+          <div
+            key={selected.id || "new_service"}
+            className="p-10 pb-40 space-y-8 max-w-5xl mx-auto"
+          >
             {/* Toolbar Sticky */}
             <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-200 sticky top-0 z-20 backdrop-blur-md gap-4">
               {/* Cột trái: Thông tin & Tiêu đề - Thêm min-w-0 để truncate hoạt động */}
@@ -844,7 +855,7 @@ export function ServicesTabContent() {
                   <div className="space-y-8">
                     {selected.content?.map((s: any, i: number) => (
                       <div
-                        key={i}
+                        key={`section-${selected.id}-${i}`}
                         ref={
                           i === selected.content.length - 1
                             ? lastSectionRef

@@ -1,13 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef } from "react";
 
-/**
- * Hook để quản lý draft (bản nháp) với localStorage
- * - Tự động lưu draft khi dữ liệu thay đổi (với debounce 1 giây)
- * - Restore draft từ localStorage khi key thay đổi
- * - Xóa draft sau khi save thành công
- * - Thêm validation để prevent cross-article data mix-up
- */
 export function useDraft<T extends { id?: string; slug?: string }>(
   key: string,
   data: T,
@@ -16,89 +9,59 @@ export function useDraft<T extends { id?: string; slug?: string }>(
 ) {
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const isRestoringRef = useRef(false);
-  const lastKeyRef = useRef(key); // Track last key to detect changes
+  const lastKeyRef = useRef(key);
 
-  // Restore draft khi key thay đổi (khi chuyển item khác)
+  // 🛡️ CHỐNG NHẢY DỮ LIỆU: Clear timer ngay lập tức khi đổi bài
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      console.log(`🚫 Cancelled stale save for old key: ${lastKeyRef.current}`);
+    }
+    lastKeyRef.current = key;
+  }, [key]);
+
+  // Restore draft
   useEffect(() => {
     if (!key || isRestoringRef.current) return;
 
-    // Only restore if key actually changed
-    if (lastKeyRef.current === key) return;
-    lastKeyRef.current = key;
-
+    // Logic restore giữ nguyên như của bạn...
     isRestoringRef.current = true;
     try {
       const savedDraft = localStorage.getItem(`draft_${key}`);
       if (savedDraft) {
         const parsedDraft = JSON.parse(savedDraft);
-        console.log(`✅ Restored draft for ${key}`, {
-          id: parsedDraft.id,
-          slug: parsedDraft.slug,
-          timestamp: new Date().toISOString(),
-        });
         onSetData(parsedDraft);
       }
     } catch (error) {
-      console.error(`Failed to restore draft for ${key}:`, error);
-      // Clear corrupted draft
-      try {
-        localStorage.removeItem(`draft_${key}`);
-        console.log(`🗑️ Removed corrupted draft for ${key}`);
-      } catch (e) {
-        console.error(`Failed to clear corrupted draft:`, e);
-      }
+      localStorage.removeItem(`draft_${key}`);
     } finally {
       isRestoringRef.current = false;
     }
-  }, [key]); // Trigger whenever key changes
+  }, [key]);
 
-  // Auto-save draft với debounce (mỗi 1 giây)
+  // Auto-save draft
   useEffect(() => {
-    if (!isChanged || !key) return;
+    // Chỉ lưu nếu thực sự có thay đổi và key hiện tại khớp với data
+    if (!isChanged || !key || (data.id && key !== `service_${data.id}`)) return;
 
-    // Clear timer cũ
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
-    // Set timer mới - save vào localStorage
     debounceTimerRef.current = setTimeout(() => {
       try {
-        // ⚠️ VALIDATION: Ensure we're saving draft for correct key
-        if (!data.id && !data.slug) {
-          console.warn(
-            `⚠️ [useDraft] Skipping save: data has no id or slug for key ${key}`,
-            data,
-          );
-          return;
-        }
-
         localStorage.setItem(`draft_${key}`, JSON.stringify(data));
-        console.log(`📝 Draft auto-saved for ${key}`, {
-          id: data.id,
-          slug: data.slug,
-          timestamp: new Date().toISOString(),
-        });
+        console.log(`📝 Saved draft for ${key}`);
       } catch (error) {
-        console.error(`Failed to save draft for ${key}:`, error);
+        console.error(error);
       }
     }, 1000);
 
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
   }, [key, data, isChanged]);
 
-  // Clear draft sau khi save thành công (xóa khỏi localStorage)
   const clearDraft = () => {
-    try {
-      localStorage.removeItem(`draft_${key}`);
-      console.log(`🗑️ Draft cleared for ${key}`);
-    } catch (error) {
-      console.error(`Failed to clear draft for ${key}:`, error);
-    }
+    localStorage.removeItem(`draft_${key}`);
   };
 
   return { clearDraft };
