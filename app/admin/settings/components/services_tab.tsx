@@ -454,11 +454,22 @@ export function ServicesTabContent() {
           }
         });
 
+        // ✅ Cập nhật selected để đồng bộ với dữ liệu vừa lưu
+        const normalized = {
+          ...savedData,
+          content: savedData.content || [],
+          gallery: savedData.gallery || [],
+          features: savedData.features || [],
+          specs: savedData.specs || [],
+          faq: savedData.faq || [],
+        };
+        setSelected(normalized);
+
         router.refresh();
 
         if (isCreating) {
           setIsCreating(false);
-          setSelected((prev: any) => ({ ...prev, id: savedData.id }));
+          // selected đã được update ở trên, không cần gán lại
         }
       } else {
         alert("Lỗi khi lưu (Có thể trùng Slug)");
@@ -481,6 +492,23 @@ export function ServicesTabContent() {
 
   return (
     <div className="flex w-full h-full animate-in fade-in zoom-in duration-300">
+      {/* LOADING OVERLAY KHI XÓA */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 animate-in fade-in scale-in duration-300">
+            <Loader2 className="w-12 h-12 animate-spin text-red-500" />
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-gray-800 mb-1">
+                Đang xóa bài viết...
+              </h2>
+              <p className="text-sm text-gray-500">
+                Vui lòng chờ, hành động này không thể hoàn tác
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* LEFT: DANH SÁCH BÀI VIẾT */}
       <div className="w-80 border-r bg-white flex flex-col h-full shadow-lg z-10">
         <div className="p-5 border-b bg-gray-50 space-y-4">
@@ -575,12 +603,18 @@ export function ServicesTabContent() {
                 {!isCreatingMode && (
                   <button
                     onClick={del}
-                    disabled={saving}
+                    disabled={saving || loading}
                     className="bg-white border border-red-200 text-red-600 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-red-50 hover:border-red-300 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Xóa bài viết"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="hidden md:inline">Xóa</span>
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    <span className="hidden md:inline">
+                      {loading ? "Đang xóa..." : "Xóa"}
+                    </span>
                   </button>
                 )}
 
