@@ -36,20 +36,71 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { slug, ...data } = body;
+    const { slug, id, ...data } = body;
+
+    // 🔍 VALIDATION: Ensure slug exists and is valid
+    if (!slug || typeof slug !== "string" || slug.trim() === "") {
+      console.error("❌ Invalid slug:", slug, "Body:", JSON.stringify(body));
+      return NextResponse.json(
+        { error: "Invalid slug - cannot update without slug" },
+        { status: 400 },
+      );
+    }
+
+    console.log("📝 [POST /api/services] Received:", {
+      slug,
+      id,
+      name: data.name,
+      category: data.category,
+      galleryCount: data.gallery?.length,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Verify that slug+id match to prevent cross-article updates
+    const existing = await prisma.serviceContent.findUnique({
+      where: { slug },
+    });
+
+    if (existing && id && existing.id !== id) {
+      console.error(
+        "❌ CRITICAL: ID mismatch! Slug:",
+        slug,
+        "Existing ID:",
+        existing.id,
+        "Sent ID:",
+        id,
+      );
+      return NextResponse.json(
+        {
+          error:
+            "Data corruption detected: ID does not match slug. Please refresh and try again.",
+        },
+        { status: 409 },
+      );
+    }
 
     const updated = await prisma.serviceContent.upsert({
       where: { slug },
       update: { ...data },
       create: { slug, ...data },
     });
+
+    console.log("✅ [POST /api/services] Updated:", {
+      id: updated.id,
+      slug: updated.slug,
+      name: updated.name,
+    });
+
     revalidatePath("/services/" + slug);
     revalidatePath("/services");
-    revalidatePath("/"); // Nếu có hiện ở trang chủ
+    revalidatePath("/");
     return NextResponse.json(updated);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Lỗi lưu dữ liệu" }, { status: 500 });
+    console.error("❌ [POST /api/services] Error:", error);
+    return NextResponse.json(
+      { error: "Lỗi lưu dữ liệu", details: String(error) },
+      { status: 500 },
+    );
   }
 }
 

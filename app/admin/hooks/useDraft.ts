@@ -6,8 +6,9 @@ import { useEffect, useRef } from "react";
  * - Tự động lưu draft khi dữ liệu thay đổi (với debounce 1 giây)
  * - Restore draft từ localStorage khi key thay đổi
  * - Xóa draft sau khi save thành công
+ * - Thêm validation để prevent cross-article data mix-up
  */
-export function useDraft<T>(
+export function useDraft<T extends { id?: string; slug?: string }>(
   key: string,
   data: T,
   onSetData: (newData: T) => void,
@@ -15,28 +16,41 @@ export function useDraft<T>(
 ) {
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const isRestoringRef = useRef(false);
+  const lastKeyRef = useRef(key); // Track last key to detect changes
 
   // Restore draft khi key thay đổi (khi chuyển item khác)
   useEffect(() => {
     if (!key || isRestoringRef.current) return;
+
+    // Only restore if key actually changed
+    if (lastKeyRef.current === key) return;
+    lastKeyRef.current = key;
 
     isRestoringRef.current = true;
     try {
       const savedDraft = localStorage.getItem(`draft_${key}`);
       if (savedDraft) {
         const parsedDraft = JSON.parse(savedDraft);
-        // Chỉ restore nếu draft khác với data hiện tại
-        if (JSON.stringify(parsedDraft) !== JSON.stringify(data)) {
-          console.log(`✅ Restored draft for ${key}`);
-          onSetData(parsedDraft);
-        }
+        console.log(`✅ Restored draft for ${key}`, {
+          id: parsedDraft.id,
+          slug: parsedDraft.slug,
+          timestamp: new Date().toISOString(),
+        });
+        onSetData(parsedDraft);
       }
     } catch (error) {
       console.error(`Failed to restore draft for ${key}:`, error);
+      // Clear corrupted draft
+      try {
+        localStorage.removeItem(`draft_${key}`);
+        console.log(`🗑️ Removed corrupted draft for ${key}`);
+      } catch (e) {
+        console.error(`Failed to clear corrupted draft:`, e);
+      }
     } finally {
       isRestoringRef.current = false;
     }
-  }, [key]); // Chỉ restore khi key (id) thay đổi
+  }, [key]); // Trigger whenever key changes
 
   // Auto-save draft với debounce (mỗi 1 giây)
   useEffect(() => {
@@ -50,8 +64,21 @@ export function useDraft<T>(
     // Set timer mới - save vào localStorage
     debounceTimerRef.current = setTimeout(() => {
       try {
+        // ⚠️ VALIDATION: Ensure we're saving draft for correct key
+        if (!data.id && !data.slug) {
+          console.warn(
+            `⚠️ [useDraft] Skipping save: data has no id or slug for key ${key}`,
+            data,
+          );
+          return;
+        }
+
         localStorage.setItem(`draft_${key}`, JSON.stringify(data));
-        console.log(`📝 Draft auto-saved for ${key}`);
+        console.log(`📝 Draft auto-saved for ${key}`, {
+          id: data.id,
+          slug: data.slug,
+          timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error(`Failed to save draft for ${key}:`, error);
       }

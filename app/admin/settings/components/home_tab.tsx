@@ -224,9 +224,21 @@ export function HomeTabContent() {
         }),
       ]);
       alert("✨ Giao diện Trang Chủ đã lưu thành công!");
+
+      // 🔥 XÓA DRAFT NGAY LẬP TỨC
+      try {
+        localStorage.removeItem("draft_home_config");
+        console.log("🗑️ Draft cleared: draft_home_config");
+      } catch (error) {
+        console.error("Failed to remove draft:", error);
+      }
+
       clearDraft(); // Xóa draft sau khi save thành công
       setIsChanged(false);
       setHasDraft(false);
+
+      // 📥 RELOAD DỮ LIỆU TỪ DATABASE ĐỂ ĐỒng BỘ
+      await reloadHomeData();
       router.refresh();
     } catch (e) {
       alert("❌ Lỗi khi lưu dữ liệu!");
@@ -583,7 +595,7 @@ export function HomeTabContent() {
                     Chưa có ảnh
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col sm:flex-row items-center justify-center gap-2 p-2">
                   {homeConfig.hero.mainImage && (
                     <button
                       onClick={() => {
@@ -594,7 +606,7 @@ export function HomeTabContent() {
                           });
                         }
                       }}
-                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1 whitespace-nowrap"
                       title="Xóa ảnh"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -648,7 +660,7 @@ export function HomeTabContent() {
                     Chưa có ảnh
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col sm:flex-row items-center justify-center gap-2 p-2">
                   {homeConfig.hero.floatingImage && (
                     <button
                       onClick={() => {
@@ -659,7 +671,7 @@ export function HomeTabContent() {
                           });
                         }
                       }}
-                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1"
+                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm flex items-center gap-1 whitespace-nowrap"
                       title="Xóa ảnh"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -733,7 +745,7 @@ export function HomeTabContent() {
                         NO IMG
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
                       {item.image && (
                         <button
                           onClick={() => {
@@ -741,7 +753,7 @@ export function HomeTabContent() {
                               updateHomeItem("services", idx, "image", "");
                             }
                           }}
-                          className="absolute top-2 right-2 text-[12px] bg-red-500 hover:bg-red-600 text-white px-1.5 py-1 rounded font-bold shadow-sm flex items-center gap-0.5"
+                          className="absolute top-2 right-2 text-[12px] bg-red-500 hover:bg-red-600 text-white px-1.5 py-1 rounded font-bold shadow-sm flex items-center gap-0.5 whitespace-nowrap"
                           title="Xóa ảnh"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -757,10 +769,22 @@ export function HomeTabContent() {
                             r.info.secure_url,
                           )
                         }
-                        className="text-[10px] bg-white px-3 py-1.5 rounded-full font-bold shadow-md"
+                        className="text-[10px] bg-white px-3 py-1.5 rounded-full font-bold shadow-md w-full sm:w-auto"
                       >
                         ĐỔI
                       </CldUploadButton>
+                      <button
+                        onClick={() =>
+                          openCloudinaryBrowser((url: string) =>
+                            updateHomeItem("services", idx, "image", url),
+                          )
+                        }
+                        className="text-[10px] bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-full font-bold shadow-md flex items-center gap-1 w-full sm:w-auto justify-center"
+                        title="Browse ảnh từ Cloudinary"
+                      >
+                        {/* <Search className="w-3 h-3" /> */}
+                        Browse
+                      </button>
                     </div>
                   </div>
                   <div className="text-center text-[10px] font-bold text-gray-500 bg-gray-100 rounded py-1 border border-gray-200 uppercase tracking-wider">
@@ -899,7 +923,7 @@ export function HomeTabContent() {
                         NO IMG
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col  items-center justify-center gap-1 p-1">
                       <CldUploadButton
                         uploadPreset="hoanganhthao-upload"
                         onSuccess={(r: any) =>
@@ -910,10 +934,22 @@ export function HomeTabContent() {
                             r.info.secure_url,
                           )
                         }
-                        className="text-[9px] bg-white px-2 py-1 rounded font-bold cursor-pointer hover:scale-105 transition-transform"
+                        className="text-[9px] bg-white px-2 py-1 rounded font-bold cursor-pointer hover:scale-105 transition-transform whitespace-nowrap"
                       >
                         ĐỔI
                       </CldUploadButton>
+                      <button
+                        onClick={() =>
+                          openCloudinaryBrowser((url: string) =>
+                            updateHomeItem("showcase", idx, "image", url),
+                          )
+                        }
+                        className="text-[9px] bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-bold flex items-center gap-1"
+                        title="Browse ảnh từ Cloudinary"
+                      >
+                        {/* <Search className="w-3 h-3" /> */}
+                        <span className="hidden sm:inline">Browse</span>
+                      </button>
                     </div>
                   </div>
                   <div className="flex-1 grid grid-cols-1 gap-2">
@@ -1187,7 +1223,7 @@ export function HomeTabContent() {
                           NO IMG
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity p-1">
                         <CldUploadButton
                           uploadPreset="hoanganhthao-upload"
                           onSuccess={(r: any) =>
@@ -1198,10 +1234,22 @@ export function HomeTabContent() {
                               r.info.secure_url,
                             )
                           }
-                          className="text-[10px] text-white font-bold bg-black/50 px-2 py-1 rounded"
+                          className="text-[10px] text-white font-bold bg-black/50 px-2 py-1 rounded whitespace-nowrap w-full sm:w-auto"
                         >
                           ĐỔI
                         </CldUploadButton>
+                        <button
+                          onClick={() =>
+                            openCloudinaryBrowser((url: string) =>
+                              updateHomeItem("portfolio", idx, "image", url),
+                            )
+                          }
+                          className="text-[10px] text-white font-bold bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded flex items-center gap-1 w-full sm:w-auto justify-center"
+                          title="Browse ảnh từ Cloudinary"
+                        >
+                          <Search className="w-3 h-3" />
+                          Browse
+                        </button>
                       </div>
                     </div>
                   )}

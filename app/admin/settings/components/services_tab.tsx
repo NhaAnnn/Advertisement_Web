@@ -179,6 +179,28 @@ export function ServicesTabContent() {
       selectedId: selected?.id,
     });
 
+    // ✅ CHECK: Nếu đang edit bài hiện tại và chưa save, confirm trước
+    if (isChanged && selected?.id && selected?.id !== id) {
+      console.warn("⚠️ Found unsaved changes - showing confirm");
+      if (
+        !confirm(
+          "⚠️ Bạn có thay đổi chưa lưu. Hủy thay đổi và chuyển sang bài khác?",
+        )
+      ) {
+        console.log("❌ User cancelled - staying on current article");
+        return;
+      }
+      // User confirmed - clear draft của bài hiện tại
+      console.log("✅ User confirmed - clearing draft of current article");
+      try {
+        const currentDraftKey = `draft_service_${selected.id}`;
+        localStorage.removeItem(currentDraftKey);
+      } catch (e) {
+        console.error("Failed to clear draft:", e);
+      }
+      setIsChanged(false);
+    }
+
     // Nếu có draft bài mới chưa lưu, confirm trước
     if (hasDraftNew) {
       console.warn("⚠️ Found unsaved new article draft - showing confirm");
@@ -272,6 +294,22 @@ export function ServicesTabContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const clone = () => {
+    if (!selected || !selected.id) return;
+
+    const clonedData = JSON.parse(JSON.stringify(selected));
+    clonedData.id = undefined; // Reset ID để tạo bài mới
+    clonedData.name = `${selected.name} (Copy)`;
+    clonedData.slug = `${selected.slug}-copy-${Date.now()}`;
+
+    setSelected(clonedData);
+    setIsCreating(true);
+    setIsChanged(true);
+    console.log(
+      "✅ Bài viết đã được clone. Vui lòng cập nhật thông tin và lưu.",
+    );
   };
 
   const generateSlug = (name: string) => {
@@ -417,8 +455,28 @@ export function ServicesTabContent() {
 
   const save = async () => {
     if (!selected.name || !selected.slug) return alert("Cần nhập tên và slug!");
+
+    // ✅ CRITICAL VALIDATION: Prevent cross-article updates
+    if (!isCreatingMode) {
+      const originalArticle = list.find((item) => item.id === selected.id);
+      if (!originalArticle) {
+        console.error("❌ CRITICAL: Original article not found!", {
+          selectedId: selected.id,
+        });
+        return alert(
+          "❌ Lỗi: Không tìm thấy bài viết gốc. Hãy reload và thử lại.",
+        );
+      }
+    }
+
     setSaving(true);
     try {
+      console.log("📤 [save] Sending data:", {
+        id: selected.id,
+        slug: selected.slug,
+        name: selected.name,
+        isCreatingMode,
+      });
       const res = await fetch("/api/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -427,6 +485,20 @@ export function ServicesTabContent() {
 
       if (res.ok) {
         const savedData = await res.json();
+
+        // ✅ VERIFY: Check returned data matches what we sent
+        if (savedData.id !== selected.id && !isCreatingMode) {
+          console.error("❌ CRITICAL: Response ID doesn't match sent ID!", {
+            sentId: selected.id,
+            returnedId: savedData.id,
+            sentSlug: selected.slug,
+            returnedSlug: savedData.slug,
+          });
+          return alert(
+            "❌ Lỗi: Dữ liệu trả về không khớp. Vui lòng kiểm tra lại.",
+          );
+        }
+
         alert("✅ Đã lưu thành công!");
 
         // Clear draft sau khi save thành công
@@ -601,21 +673,32 @@ export function ServicesTabContent() {
               {/* Cột phải: Nhóm nút bấm - Thêm shrink-0 để không bao giờ bị tiêu đề ép nhỏ lại */}
               <div className="flex gap-2 md:gap-3 shrink-0">
                 {!isCreatingMode && (
-                  <button
-                    onClick={del}
-                    disabled={saving || loading}
-                    className="bg-white border border-red-200 text-red-600 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-red-50 hover:border-red-300 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Xóa bài viết"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                    <span className="hidden md:inline">
-                      {loading ? "Đang xóa..." : "Xóa"}
-                    </span>
-                  </button>
+                  <>
+                    <button
+                      onClick={clone}
+                      disabled={saving || loading}
+                      className="bg-blue-50 border border-blue-200 text-blue-600 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-blue-100 hover:border-blue-300 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Clone bài viết"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span className="hidden md:inline">Clone</span>
+                    </button>
+                    <button
+                      onClick={del}
+                      disabled={saving || loading}
+                      className="bg-white border border-red-200 text-red-600 px-3 md:px-4 py-2.5 rounded-xl font-bold hover:bg-red-50 hover:border-red-300 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Xóa bài viết"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      <span className="hidden md:inline">
+                        {loading ? "Đang xóa..." : "Xóa"}
+                      </span>
+                    </button>
+                  </>
                 )}
 
                 {isChanged && (
